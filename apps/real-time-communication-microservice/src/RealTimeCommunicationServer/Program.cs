@@ -17,7 +17,7 @@ builder.Services.AddRazorComponents()
 // Messaging
 builder.Services.AddEasyNetQ("host=localhost");
 builder.Services.AddSingleton<IMessageClient, RabbitMqMessageClient>();
-builder.Services.AddSingleton<HandleMessages>();
+builder.Services.AddHostedService<HandleMessages>();
 
 builder.Services.AddControllers();
 builder.Services.AddLogging();

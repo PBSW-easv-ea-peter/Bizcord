@@ -2,24 +2,30 @@ using RealTimeCommunicationServer.Models;
 
 namespace RealTimeCommunicationServer.Messaging;
 
-public class HandleMessages
+public class HandleMessages : BackgroundService
 {
     private readonly IMessageClient _messageClient;
     private readonly ILogger<HandleMessages> _logger;
 
-    public HandleMessages(IMessageClient messageClient, ILogger<HandleMessages> logger)
+    public HandleMessages(
+        IMessageClient messageClient,
+        ILogger<HandleMessages> logger)
     {
         _messageClient = messageClient;
         _logger = logger;
     }
 
-    public Task Subscribe()
+    protected override async Task ExecuteAsync(
+        CancellationToken stoppingToken)
     {
-        return _messageClient.Subscribe<PingMessage>(
+        await _messageClient.Subscribe<PingMessage>(
             "real-time-server",
             message =>
             {
-                _logger.LogWarning("Received message: {message}", message.Text);
+                _logger.LogWarning(
+                    "Received message: {Message}",
+                    message.Text);
+
                 return Task.CompletedTask;
             });
     }
