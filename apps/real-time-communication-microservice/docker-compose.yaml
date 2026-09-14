@@ -23,10 +23,11 @@ services:
       dockerfile: Dockerfile
     container_name: realtimecommunicationserver
     ports:
-      - "8080:8080"
+      - "8080:5030"
     environment:
       RabbitMq__Host: rabbitmq
       ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:5030 
     depends_on:
       rabbitmq:
         condition: service_healthy
