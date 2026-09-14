@@ -1,0 +1,565 @@
+{
+  "configuration" : { },
+  "description" : "C4 model - Level 2 (Container diagram)",
+  "documentation" : { },
+  "id" : 1,
+  "lastModifiedDate" : "2026-09-14T09:48:40Z",
+  "model" : {
+    "people" : [ {
+      "description" : "A user of Bizcord interacting with multiple channels.",
+      "id" : "1",
+      "name" : "Bizcord User",
+      "properties" : {
+        "structurizr.dsl.identifier" : "user"
+      },
+      "relationships" : [ {
+        "description" : "Uses",
+        "destinationId" : "3",
+        "id" : "20",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Uses",
+        "destinationId" : "2",
+        "id" : "21",
+        "linkedRelationshipId" : "20",
+        "sourceId" : "1"
+      } ],
+      "tags" : "Element,Person"
+    } ],
+    "softwareSystems" : [ {
+      "containers" : [ {
+        "description" : "Client application used by end users.",
+        "documentation" : { },
+        "id" : "3",
+        "name" : "Bizcord Client",
+        "properties" : {
+          "structurizr.dsl.identifier" : "client"
+        },
+        "relationships" : [ {
+          "description" : "Login",
+          "destinationId" : "4",
+          "id" : "22",
+          "sourceId" : "3",
+          "tags" : "Relationship"
+        }, {
+          "description" : "manages User",
+          "destinationId" : "6",
+          "id" : "24",
+          "sourceId" : "3",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Interacts with",
+          "destinationId" : "8",
+          "id" : "25",
+          "sourceId" : "3",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Communicates with",
+          "destinationId" : "10",
+          "id" : "26",
+          "sourceId" : "3",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Interacts with",
+          "destinationId" : "12",
+          "id" : "27",
+          "sourceId" : "3",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container,Client App"
+      }, {
+        "description" : "Handles login by verifying login-information, resetting passwords and disabling users.",
+        "documentation" : { },
+        "group" : "UserAuth",
+        "id" : "4",
+        "name" : "UserAuth Service",
+        "properties" : {
+          "structurizr.dsl.identifier" : "userAuthService"
+        },
+        "relationships" : [ {
+          "description" : "Authenticate -> session token",
+          "destinationId" : "3",
+          "id" : "23",
+          "sourceId" : "4",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Read/Write",
+          "destinationId" : "5",
+          "id" : "29",
+          "sourceId" : "4",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container,Service"
+      }, {
+        "description" : "User information: password, email, login_attempts.",
+        "documentation" : { },
+        "group" : "UserAuth",
+        "id" : "5",
+        "name" : "AuthDB",
+        "properties" : {
+          "structurizr.dsl.identifier" : "authDb"
+        },
+        "tags" : "Element,Container,Database",
+        "technology" : "RDBMS"
+      }, {
+        "description" : "Handles profile-data, subscribed channels and friend lists.",
+        "documentation" : { },
+        "group" : "User",
+        "id" : "6",
+        "name" : "User Service",
+        "properties" : {
+          "structurizr.dsl.identifier" : "userService"
+        },
+        "relationships" : [ {
+          "description" : "Validate",
+          "destinationId" : "4",
+          "id" : "28",
+          "sourceId" : "6",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Read/Write",
+          "destinationId" : "7",
+          "id" : "30",
+          "sourceId" : "6",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container,Service"
+      }, {
+        "description" : "Contains user information: username, channels and friends.",
+        "documentation" : { },
+        "group" : "User",
+        "id" : "7",
+        "name" : "UserDB",
+        "properties" : {
+          "structurizr.dsl.identifier" : "userDb"
+        },
+        "tags" : "Element,Container,Database",
+        "technology" : "RDBMS"
+      }, {
+        "description" : "Manages servers and channels.",
+        "documentation" : { },
+        "group" : "Channel",
+        "id" : "8",
+        "name" : "ChannelService",
+        "properties" : {
+          "structurizr.dsl.identifier" : "channelService"
+        },
+        "relationships" : [ {
+          "description" : "Read/Write",
+          "destinationId" : "9",
+          "id" : "31",
+          "sourceId" : "8",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Publish: update",
+          "destinationId" : "19",
+          "id" : "34",
+          "sourceId" : "8",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container,Service"
+      }, {
+        "description" : "Contains channel information: name, users, server, channel, message.",
+        "documentation" : { },
+        "group" : "Channel",
+        "id" : "9",
+        "name" : "ChannelDB",
+        "properties" : {
+          "structurizr.dsl.identifier" : "channelDb"
+        },
+        "tags" : "Element,Container,Database",
+        "technology" : "RDBMS"
+      }, {
+        "description" : "Handles personal- and channel-based chat.",
+        "documentation" : { },
+        "group" : "Message",
+        "id" : "10",
+        "name" : "Message Service",
+        "properties" : {
+          "structurizr.dsl.identifier" : "messageService"
+        },
+        "relationships" : [ {
+          "description" : "Read/Write",
+          "destinationId" : "11",
+          "id" : "32",
+          "sourceId" : "10",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Publish: message",
+          "destinationId" : "19",
+          "id" : "35",
+          "sourceId" : "10",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container,Service",
+        "technology" : "ASP .NET Core Web API"
+      }, {
+        "description" : "Contains message information: chat, members, messages.",
+        "documentation" : { },
+        "group" : "Message",
+        "id" : "11",
+        "name" : "MessageDB",
+        "properties" : {
+          "structurizr.dsl.identifier" : "messageDb"
+        },
+        "tags" : "Element,Container,Database",
+        "technology" : "RDBMS"
+      }, {
+        "description" : "Handles likes, reactions etc.",
+        "documentation" : { },
+        "group" : "Engagement",
+        "id" : "12",
+        "name" : "Engagement Service",
+        "properties" : {
+          "structurizr.dsl.identifier" : "engagementService"
+        },
+        "relationships" : [ {
+          "description" : "Read/Write",
+          "destinationId" : "13",
+          "id" : "33",
+          "sourceId" : "12",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Publish: engagement",
+          "destinationId" : "19",
+          "id" : "36",
+          "sourceId" : "12",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container,Service"
+      }, {
+        "description" : "Contains engagement information: server_id, message_id, user_id, reaction.",
+        "documentation" : { },
+        "group" : "Engagement",
+        "id" : "13",
+        "name" : "EngagementDB",
+        "properties" : {
+          "structurizr.dsl.identifier" : "engagementDb"
+        },
+        "tags" : "Element,Container,Database",
+        "technology" : "RDBMS"
+      }, {
+        "components" : [ {
+          "description" : "Manual test endpoint (POST /api/Messages) used to verify the publish pipeline. Not a finalized part of the domain API - more/other endpoints may be added later.",
+          "documentation" : { },
+          "id" : "15",
+          "name" : "MessagesController",
+          "properties" : {
+            "structurizr.dsl.identifier" : "messagesController"
+          },
+          "relationships" : [ {
+            "description" : "Publish<PingMessage>",
+            "destinationId" : "16",
+            "id" : "39",
+            "sourceId" : "15",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "ASP.NET Core Web API Controller"
+        }, {
+          "description" : "Abstraction over the message broker (Publish/Subscribe), decouples the service from a specific broker technology so it can be swapped later (e.g. Kafka).",
+          "documentation" : { },
+          "id" : "16",
+          "name" : "IMessageClient",
+          "properties" : {
+            "structurizr.dsl.identifier" : "messageClient"
+          },
+          "tags" : "Element,Component",
+          "technology" : "C# Interface"
+        }, {
+          "description" : "EasyNetQ-based implementation of IMessageClient that talks to RabbitMQ.",
+          "documentation" : { },
+          "id" : "17",
+          "name" : "RabbitMqMessageClient",
+          "properties" : {
+            "structurizr.dsl.identifier" : "rabbitMqMessageClient"
+          },
+          "relationships" : [ {
+            "description" : "Publish/Subscribe messages via EasyNetQ (IBus)",
+            "destinationId" : "19",
+            "id" : "41",
+            "sourceId" : "17",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "C# / EasyNetQ"
+        }, {
+          "description" : "Subscribes via IMessageClient on startup; currently only logs received messages.",
+          "documentation" : { },
+          "id" : "18",
+          "name" : "HandleMessages",
+          "properties" : {
+            "structurizr.dsl.identifier" : "handleMessages"
+          },
+          "relationships" : [ {
+            "description" : "Subscribe<PingMessage>",
+            "destinationId" : "16",
+            "id" : "40",
+            "sourceId" : "18",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "ASP.NET Core BackgroundService"
+        } ],
+        "description" : "Subscribes to domain events via RabbitMQ (EasyNetQ) and pushes real-time updates/notifications to clients.",
+        "documentation" : { },
+        "group" : "RealTimeCommunication",
+        "id" : "14",
+        "name" : "Real-Time Communication Service",
+        "properties" : {
+          "structurizr.dsl.identifier" : "realTimeCommunicationService"
+        },
+        "relationships" : [ {
+          "description" : "Subscribe",
+          "destinationId" : "19",
+          "id" : "37",
+          "sourceId" : "14",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Push notification",
+          "destinationId" : "3",
+          "id" : "38",
+          "sourceId" : "14",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container,Event-hub",
+        "technology" : "ASP.NET Core Web API (EasyNetQ)"
+      }, {
+        "description" : "Message broker for event-driven kommunikation mellem microservices - bredere end kun notifikationer.",
+        "documentation" : { },
+        "id" : "19",
+        "name" : "RabbitMQ",
+        "properties" : {
+          "structurizr.dsl.identifier" : "rabbitMq"
+        },
+        "tags" : "Element,Container,Message Broker",
+        "technology" : "RabbitMQ"
+      } ],
+      "description" : "Chat platform with channels, messaging and engagement features.",
+      "documentation" : { },
+      "id" : "2",
+      "name" : "Bizcord",
+      "properties" : {
+        "structurizr.dsl.identifier" : "bizcord"
+      },
+      "tags" : "Element,Software System"
+    } ]
+  },
+  "name" : "Bizcord",
+  "properties" : {
+    "structurizr.inspection.error" : "31",
+    "structurizr.dsl" : "d29ya3NwYWNlICJCaXpjb3JkIiAiQzQgbW9kZWwgLSBMZXZlbCAyIChDb250YWluZXIgZGlhZ3JhbSkiIHsKCiAgICBtb2RlbCB7CiAgICAgICAgdXNlciA9IHBlcnNvbiAiQml6Y29yZCBVc2VyIiAiQSB1c2VyIG9mIEJpemNvcmQgaW50ZXJhY3Rpbmcgd2l0aCBtdWx0aXBsZSBjaGFubmVscy4iCgogICAgICAgIGJpemNvcmQgPSBzb2Z0d2FyZVN5c3RlbSAiQml6Y29yZCIgIkNoYXQgcGxhdGZvcm0gd2l0aCBjaGFubmVscywgbWVzc2FnaW5nIGFuZCBlbmdhZ2VtZW50IGZlYXR1cmVzLiIgewoKICAgICAgICAgICAgY2xpZW50ID0gY29udGFpbmVyICJCaXpjb3JkIENsaWVudCIgIkNsaWVudCBhcHBsaWNhdGlvbiB1c2VkIGJ5IGVuZCB1c2Vycy4iICIiICJDbGllbnQgQXBwIgoKICAgICAgICAgICAgZ3JvdXAgIlVzZXJBdXRoIiB7CiAgICAgICAgICAgICAgICB1c2VyQXV0aFNlcnZpY2UgPSBjb250YWluZXIgIlVzZXJBdXRoIFNlcnZpY2UiICJIYW5kbGVzIGxvZ2luIGJ5IHZlcmlmeWluZyBsb2dpbi1pbmZvcm1hdGlvbiwgcmVzZXR0aW5nIHBhc3N3b3JkcyBhbmQgZGlzYWJsaW5nIHVzZXJzLiIgIiIgIlNlcnZpY2UiCiAgICAgICAgICAgICAgICBhdXRoRGIgPSBjb250YWluZXIgIkF1dGhEQiIgIlVzZXIgaW5mb3JtYXRpb246IHBhc3N3b3JkLCBlbWFpbCwgbG9naW5fYXR0ZW1wdHMuIiAiUkRCTVMiICJEYXRhYmFzZSIKICAgICAgICAgICAgfQoKICAgICAgICAgICAgZ3JvdXAgIlVzZXIiIHsKICAgICAgICAgICAgICAgIHVzZXJTZXJ2aWNlID0gY29udGFpbmVyICJVc2VyIFNlcnZpY2UiICJIYW5kbGVzIHByb2ZpbGUtZGF0YSwgc3Vic2NyaWJlZCBjaGFubmVscyBhbmQgZnJpZW5kIGxpc3RzLiIgIiIgIlNlcnZpY2UiCiAgICAgICAgICAgICAgICB1c2VyRGIgPSBjb250YWluZXIgIlVzZXJEQiIgIkNvbnRhaW5zIHVzZXIgaW5mb3JtYXRpb246IHVzZXJuYW1lLCBjaGFubmVscyBhbmQgZnJpZW5kcy4iICJSREJNUyIgIkRhdGFiYXNlIgogICAgICAgICAgICB9CgogICAgICAgICAgICBncm91cCAiQ2hhbm5lbCIgewogICAgICAgICAgICAgICAgY2hhbm5lbFNlcnZpY2UgPSBjb250YWluZXIgIkNoYW5uZWxTZXJ2aWNlIiAiTWFuYWdlcyBzZXJ2ZXJzIGFuZCBjaGFubmVscy4iICIiICJTZXJ2aWNlIgogICAgICAgICAgICAgICAgY2hhbm5lbERiID0gY29udGFpbmVyICJDaGFubmVsREIiICJDb250YWlucyBjaGFubmVsIGluZm9ybWF0aW9uOiBuYW1lLCB1c2Vycywgc2VydmVyLCBjaGFubmVsLCBtZXNzYWdlLiIgIlJEQk1TIiAiRGF0YWJhc2UiCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGdyb3VwICJNZXNzYWdlIiB7CiAgICAgICAgICAgICAgICBtZXNzYWdlU2VydmljZSA9IGNvbnRhaW5lciAiTWVzc2FnZSBTZXJ2aWNlIiAiSGFuZGxlcyBwZXJzb25hbC0gYW5kIGNoYW5uZWwtYmFzZWQgY2hhdC4iICJBU1AgLk5FVCBDb3JlIFdlYiBBUEkiICJTZXJ2aWNlIgogICAgICAgICAgICAgICAgbWVzc2FnZURiID0gY29udGFpbmVyICJNZXNzYWdlREIiICJDb250YWlucyBtZXNzYWdlIGluZm9ybWF0aW9uOiBjaGF0LCBtZW1iZXJzLCBtZXNzYWdlcy4iICJSREJNUyIgIkRhdGFiYXNlIgogICAgICAgICAgICB9CgogICAgICAgICAgICBncm91cCAiRW5nYWdlbWVudCIgewogICAgICAgICAgICAgICAgZW5nYWdlbWVudFNlcnZpY2UgPSBjb250YWluZXIgIkVuZ2FnZW1lbnQgU2VydmljZSIgIkhhbmRsZXMgbGlrZXMsIHJlYWN0aW9ucyBldGMuIiAiIiAiU2VydmljZSIKICAgICAgICAgICAgICAgIGVuZ2FnZW1lbnREYiA9IGNvbnRhaW5lciAiRW5nYWdlbWVudERCIiAiQ29udGFpbnMgZW5nYWdlbWVudCBpbmZvcm1hdGlvbjogc2VydmVyX2lkLCBtZXNzYWdlX2lkLCB1c2VyX2lkLCByZWFjdGlvbi4iICJSREJNUyIgIkRhdGFiYXNlIgogICAgICAgICAgICB9CgogICAgICAgICAgICBncm91cCAiUmVhbFRpbWVDb21tdW5pY2F0aW9uIiB7CiAgICAgICAgICAgICAgICByZWFsVGltZUNvbW11bmljYXRpb25TZXJ2aWNlID0gY29udGFpbmVyICJSZWFsLVRpbWUgQ29tbXVuaWNhdGlvbiBTZXJ2aWNlIiAiU3Vic2NyaWJlcyB0byBkb21haW4gZXZlbnRzIHZpYSBSYWJiaXRNUSAoRWFzeU5ldFEpIGFuZCBwdXNoZXMgcmVhbC10aW1lIHVwZGF0ZXMvbm90aWZpY2F0aW9ucyB0byBjbGllbnRzLiIgIkFTUC5ORVQgQ29yZSBXZWIgQVBJIChFYXN5TmV0USkiICJFdmVudC1odWIiIHsKICAgICAgICAgICAgICAgICAgICBtZXNzYWdlc0NvbnRyb2xsZXIgPSBjb21wb25lbnQgIk1lc3NhZ2VzQ29udHJvbGxlciIgIk1hbnVhbCB0ZXN0IGVuZHBvaW50IChQT1NUIC9hcGkvTWVzc2FnZXMpIHVzZWQgdG8gdmVyaWZ5IHRoZSBwdWJsaXNoIHBpcGVsaW5lLiBOb3QgYSBmaW5hbGl6ZWQgcGFydCBvZiB0aGUgZG9tYWluIEFQSSAtIG1vcmUvb3RoZXIgZW5kcG9pbnRzIG1heSBiZSBhZGRlZCBsYXRlci4iICJBU1AuTkVUIENvcmUgV2ViIEFQSSBDb250cm9sbGVyIgogICAgICAgICAgICAgICAgICAgIG1lc3NhZ2VDbGllbnQgPSBjb21wb25lbnQgIklNZXNzYWdlQ2xpZW50IiAiQWJzdHJhY3Rpb24gb3ZlciB0aGUgbWVzc2FnZSBicm9rZXIgKFB1Ymxpc2gvU3Vic2NyaWJlKSwgZGVjb3VwbGVzIHRoZSBzZXJ2aWNlIGZyb20gYSBzcGVjaWZpYyBicm9rZXIgdGVjaG5vbG9neSBzbyBpdCBjYW4gYmUgc3dhcHBlZCBsYXRlciAoZS5nLiBLYWZrYSkuIiAiQyMgSW50ZXJmYWNlIgogICAgICAgICAgICAgICAgICAgIHJhYmJpdE1xTWVzc2FnZUNsaWVudCA9IGNvbXBvbmVudCAiUmFiYml0TXFNZXNzYWdlQ2xpZW50IiAiRWFzeU5ldFEtYmFzZWQgaW1wbGVtZW50YXRpb24gb2YgSU1lc3NhZ2VDbGllbnQgdGhhdCB0YWxrcyB0byBSYWJiaXRNUS4iICJDIyAvIEVhc3lOZXRRIgogICAgICAgICAgICAgICAgICAgIGhhbmRsZU1lc3NhZ2VzID0gY29tcG9uZW50ICJIYW5kbGVNZXNzYWdlcyIgIlN1YnNjcmliZXMgdmlhIElNZXNzYWdlQ2xpZW50IG9uIHN0YXJ0dXA7IGN1cnJlbnRseSBvbmx5IGxvZ3MgcmVjZWl2ZWQgbWVzc2FnZXMuIiAiQVNQLk5FVCBDb3JlIEJhY2tncm91bmRTZXJ2aWNlIgogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgLy8gRnJlbXRpZGlnIHVkdmlkZWxzZSwgamYuIGJlc2x1dG5pbmc6IGVnZW4gREIgdGlsIGZ4IGRlIHNlbmVzdGUgMzAgbm90aWZpa2F0aW9uZXIuCiAgICAgICAgICAgICAgICAvLyByZWFsVGltZUNvbW11bmljYXRpb25EYiA9IGNvbnRhaW5lciAiUmVhbFRpbWVDb21tdW5pY2F0aW9uREIiICJTdG9yZXMgcmVjZW50IG5vdGlmaWNhdGlvbnMgKGUuZy4gbGFzdCAzMCkuIiAiUkRCTVMiICJEYXRhYmFzZSIKCiAgICAgICAgICAgICAgICAvLyBUT0RPOiBpbmdlbiBrb21wb25lbnQgcHVzaGVyIGVuZG51IHRpbCBrbGllbnRlbiAoZnggdmlhIFNpZ25hbFIvV2ViU29ja2V0cykuCiAgICAgICAgICAgICAgICAvLyBLZW5kdCBnYXAgaWZ0LiBMMi1yZWxhdGlvbmVuICJQdXNoIG5vdGlmaWNhdGlvbiIgLSBhZnZlbnRlciBiZXNsdXRuaW5nIG9tIHB1c2gtdGVrbm9sb2dpLgogICAgICAgICAgICB9CgogICAgICAgICAgICAvLyBSYWJiaXRNUSBsaWdnZXIgImzDuHN0IiBpIHN5c3RlbWV0IChpa2tlIGkgZW4gZ3JvdXApIC0gZGVuIGVyIGRlbHQgaW5mcmFzdHJ1a3R1ciBww6UgdHbDpnJzCiAgICAgICAgICAgIC8vIGFmIGJvdW5kZWQgY29udGV4dHMsIGlra2Ugc2VsdiBlbiBjb250ZXh0IG5vZ2VuIGFmIHRlYW1zZW5lIGVqZXIuCiAgICAgICAgICAgIHJhYmJpdE1xID0gY29udGFpbmVyICJSYWJiaXRNUSIgIk1lc3NhZ2UgYnJva2VyIGZvciBldmVudC1kcml2ZW4ga29tbXVuaWthdGlvbiBtZWxsZW0gbWljcm9zZXJ2aWNlcyAtIGJyZWRlcmUgZW5kIGt1biBub3RpZmlrYXRpb25lci4iICJSYWJiaXRNUSIgIk1lc3NhZ2UgQnJva2VyIgogICAgICAgIH0KCiAgICAgICAgLy8gUmVsYXRpb25zaGlwcwoKICAgICAgICB1c2VyIC0+IGNsaWVudCAiVXNlcyIKCiAgICAgICAgY2xpZW50IC0+IHVzZXJBdXRoU2VydmljZSAiTG9naW4iCiAgICAgICAgdXNlckF1dGhTZXJ2aWNlIC0+IGNsaWVudCAiQXV0aGVudGljYXRlIC0+IHNlc3Npb24gdG9rZW4iCgogICAgICAgIGNsaWVudCAtPiB1c2VyU2VydmljZSAibWFuYWdlcyBVc2VyIgogICAgICAgIGNsaWVudCAtPiBjaGFubmVsU2VydmljZSAiSW50ZXJhY3RzIHdpdGgiCiAgICAgICAgY2xpZW50IC0+IG1lc3NhZ2VTZXJ2aWNlICJDb21tdW5pY2F0ZXMgd2l0aCIKICAgICAgICBjbGllbnQgLT4gZW5nYWdlbWVudFNlcnZpY2UgIkludGVyYWN0cyB3aXRoIgoKICAgICAgICB1c2VyU2VydmljZSAtPiB1c2VyQXV0aFNlcnZpY2UgIlZhbGlkYXRlIgoKICAgICAgICB1c2VyQXV0aFNlcnZpY2UgLT4gYXV0aERiICJSZWFkL1dyaXRlIgogICAgICAgIHVzZXJTZXJ2aWNlIC0+IHVzZXJEYiAiUmVhZC9Xcml0ZSIKICAgICAgICBjaGFubmVsU2VydmljZSAtPiBjaGFubmVsRGIgIlJlYWQvV3JpdGUiCiAgICAgICAgbWVzc2FnZVNlcnZpY2UgLT4gbWVzc2FnZURiICJSZWFkL1dyaXRlIgogICAgICAgIGVuZ2FnZW1lbnRTZXJ2aWNlIC0+IGVuZ2FnZW1lbnREYiAiUmVhZC9Xcml0ZSIKCiAgICAgICAgLy8gUmFiYml0TVEgYnJ1Z2VzIGJyZWRlcmUgZW5kIG5vdGlmaWthdGlvbmVyIC0gc2VydmljZXMgcHVibGlzaGVyIGV2ZW50cyB0aWwgYnJva2VyJ2VuLAogICAgICAgIC8vIG9nIFJlYWwtVGltZSBDb21tdW5pY2F0aW9uIFNlcnZpY2UgZXIgw6luIGFmIChwb3RlbnRpZWx0IGZsZXJlKSBmb3JicnVnZXJlLCBkZXIgYWJvbm5lcmVyLgogICAgICAgIGNoYW5uZWxTZXJ2aWNlIC0+IHJhYmJpdE1xICJQdWJsaXNoOiB1cGRhdGUiCiAgICAgICAgbWVzc2FnZVNlcnZpY2UgLT4gcmFiYml0TXEgIlB1Ymxpc2g6IG1lc3NhZ2UiCiAgICAgICAgZW5nYWdlbWVudFNlcnZpY2UgLT4gcmFiYml0TXEgIlB1Ymxpc2g6IGVuZ2FnZW1lbnQiCiAgICAgICAgcmVhbFRpbWVDb21tdW5pY2F0aW9uU2VydmljZSAtPiByYWJiaXRNcSAiU3Vic2NyaWJlIgoKICAgICAgICByZWFsVGltZUNvbW11bmljYXRpb25TZXJ2aWNlIC0+IGNsaWVudCAiUHVzaCBub3RpZmljYXRpb24iCgogICAgICAgIC8vIENvbXBvbmVudC1sZXZlbCByZWxhdGlvbnNoaXBzIGZvciBSZWFsLVRpbWUgQ29tbXVuaWNhdGlvbiBTZXJ2aWNlCiAgICAgICAgbWVzc2FnZXNDb250cm9sbGVyIC0+IG1lc3NhZ2VDbGllbnQgIlB1Ymxpc2g8UGluZ01lc3NhZ2U+IgogICAgICAgIGhhbmRsZU1lc3NhZ2VzIC0+IG1lc3NhZ2VDbGllbnQgIlN1YnNjcmliZTxQaW5nTWVzc2FnZT4iCiAgICAgICAgcmFiYml0TXFNZXNzYWdlQ2xpZW50IC0+IHJhYmJpdE1xICJQdWJsaXNoL1N1YnNjcmliZSBtZXNzYWdlcyB2aWEgRWFzeU5ldFEgKElCdXMpIgogICAgfQoKICAgIHZpZXdzIHsKICAgICAgICBzeXN0ZW1Db250ZXh0ICJCaXpjb3JkIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0CiAgICAgICAgfQogICAgICAgIGNvbnRhaW5lciBiaXpjb3JkICJDb250YWluZXJzIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0CiAgICAgICAgfQogICAgICAgIGNvbXBvbmVudCByZWFsVGltZUNvbW11bmljYXRpb25TZXJ2aWNlICJSZWFsVGltZUNvbW11bmljYXRpb25Db21wb25lbnRzIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0CiAgICAgICAgfQoKICAgICAgICBzdHlsZXMgewogICAgICAgICAgICBlbGVtZW50ICJQZXJzb24iIHsKICAgICAgICAgICAgICAgIHNoYXBlIFBlcnNvbgogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMmVjYzcxCiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiQ2xpZW50IEFwcCIgewogICAgICAgICAgICAgICAgc2hhcGUgV2ViQnJvd3NlcgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIlNlcnZpY2UiIHsKICAgICAgICAgICAgICAgIHNoYXBlIEhleGFnb24KICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJEYXRhYmFzZSIgewogICAgICAgICAgICAgICAgc2hhcGUgQ3lsaW5kZXIKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgI2RjZTZmMQogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkV2ZW50LWh1YiIgewogICAgICAgICAgICAgICAgc2hhcGUgSGV4YWdvbgogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjZDVmNWRjCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiTWVzc2FnZSBCcm9rZXIiIHsKICAgICAgICAgICAgICAgIHNoYXBlIFBpcGUKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgI2Y1ZDc2ZQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQoKfQ==",
+    "structurizr.inspection.info" : "0",
+    "structurizr.inspection.ignore" : "0",
+    "structurizr.inspection.warning" : "0"
+  },
+  "views" : {
+    "componentViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "containerId" : "14",
+      "elements" : [ {
+        "id" : "15",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "16",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "18",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalContainerBoundariesVisible" : false,
+      "key" : "RealTimeCommunicationComponents",
+      "name" : "Component View: Bizcord - Real-Time Communication Service",
+      "order" : 3,
+      "relationships" : [ {
+        "id" : "39"
+      }, {
+        "id" : "40"
+      }, {
+        "id" : "41"
+      } ]
+    } ],
+    "configuration" : {
+      "styles" : {
+        "elements" : [ {
+          "shape" : "WebBrowser",
+          "tag" : "Client App"
+        }, {
+          "background" : "#dce6f1",
+          "shape" : "Cylinder",
+          "tag" : "Database"
+        }, {
+          "background" : "#d5f5dc",
+          "shape" : "Hexagon",
+          "tag" : "Event-hub"
+        }, {
+          "background" : "#f5d76e",
+          "shape" : "Pipe",
+          "tag" : "Message Broker"
+        }, {
+          "background" : "#2ecc71",
+          "color" : "#ffffff",
+          "shape" : "Person",
+          "tag" : "Person"
+        }, {
+          "shape" : "Hexagon",
+          "tag" : "Service"
+        } ]
+      },
+      "terminology" : { }
+    },
+    "containerViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "5",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "7",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "8",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "9",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "12",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "14",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "Containers",
+      "name" : "Container View: Bizcord",
+      "order" : 2,
+      "relationships" : [ {
+        "id" : "20"
+      }, {
+        "id" : "22"
+      }, {
+        "id" : "23"
+      }, {
+        "id" : "24"
+      }, {
+        "id" : "25"
+      }, {
+        "id" : "26"
+      }, {
+        "id" : "27"
+      }, {
+        "id" : "28"
+      }, {
+        "id" : "29"
+      }, {
+        "id" : "30"
+      }, {
+        "id" : "31"
+      }, {
+        "id" : "32"
+      }, {
+        "id" : "33"
+      }, {
+        "id" : "34"
+      }, {
+        "id" : "35"
+      }, {
+        "id" : "36"
+      }, {
+        "id" : "37"
+      }, {
+        "id" : "38"
+      } ],
+      "softwareSystemId" : "2"
+    } ],
+    "systemContextViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "enterpriseBoundaryVisible" : true,
+      "generatedKey" : true,
+      "key" : "SystemContext-001",
+      "name" : "System Context View: Bizcord",
+      "order" : 1,
+      "relationships" : [ {
+        "id" : "21"
+      } ],
+      "softwareSystemId" : "2"
+    } ]
+  }
+}

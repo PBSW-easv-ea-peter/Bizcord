@@ -17,5 +17,19 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
 
+  realtimecommunicationserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: realtimecommunicationserver
+    ports:
+      - "8080:8080"
+    environment:
+      RabbitMq__Host: rabbitmq
+      ASPNETCORE_ENVIRONMENT: Development
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   rabbitmq_data:

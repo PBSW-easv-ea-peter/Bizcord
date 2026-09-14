@@ -1,5 +1,4 @@
 using EasyNetQ;
-using RealTimeCommunicationServer.Components;
 using RealTimeCommunicationServer.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,12 +9,12 @@ builder.Services.AddOpenApi();
 // Swagger
 builder.Services.AddSwaggerGen();
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+// Error handling (RFC 7807 ProblemDetails)
+builder.Services.AddProblemDetails();
 
 // Messaging
-builder.Services.AddEasyNetQ("host=localhost");
+var rabbitMqHost = builder.Configuration["RabbitMq:Host"] ?? "localhost";
+builder.Services.AddEasyNetQ($"host={rabbitMqHost}");
 builder.Services.AddSingleton<IMessageClient, RabbitMqMessageClient>();
 builder.Services.AddHostedService<HandleMessages>();
 
@@ -27,7 +26,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseExceptionHandler();
 }
 else
 {
@@ -36,13 +35,6 @@ else
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseAntiforgery();
-
-app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
 
 app.MapControllers();
 
