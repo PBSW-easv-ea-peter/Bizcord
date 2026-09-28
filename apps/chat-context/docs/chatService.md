@@ -1,0 +1,21 @@
+- Hvad er MessageService ansvarlig for?
+    - Gemme chats og beskeder
+    - Holde styr på deltagere
+    - Holde styr på sent/delivered/seen
+    - Publicere events til fx RealTimeCommunicationService
+- Hvilke data den ejer?
+    - Chat
+    - Message
+    - ChatParticipant
+    - Evt. MessageReceipt (hvem har set beskeden)
+- Hvilke operationer skal andre kunne bede den om at udføre?
+    - MVP: Create chat, add participant, send message, get messages, mark as seen
+    - Senere: Edit/delete message, remove participant, update/delete chat, list my chats (GET /chats)
+- Hvilke informationer/events skal den kunne sende videre, når noget relevant er sket?
+    - ParticipantAdded
+    - MessageSent
+    - MessageSeen
+    - Evt. MessageDelivered
+- Hvilke informationer har den brug for, fra andre services
+    - UserId
+    - Evt. validering af at bruger eksisterer

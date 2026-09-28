@@ -1,1 +1,10 @@
-<Solution />
+<Solution>
+  <Folder Name="/apps/" />
+  <Folder Name="/apps/chat-context/" />
+  <Folder Name="/apps/chat-context/src/">
+    <Project Path="apps/chat-context/src/ChatService/ChatService.csproj" />
+  </Folder>
+  <Folder Name="/apps/chat-context/tests/">
+    <Project Path="apps/chat-context/tests/ChatService.Tests/ChatService.Tests.csproj" />
+  </Folder>
+</Solution>

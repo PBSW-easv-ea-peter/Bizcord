@@ -23,8 +23,8 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram)" {
             }
 
             group "Message" {
-                messageService = container "Message Service" "Handles personal- and channel-based chat." "ASP .NET Core Web API" "Service"
-                messageDb = container "MessageDB" "Contains message information: chat, members, messages." "RDBMS" "Database"
+                messageService = container "Message Service" "Handles direct and group chats: participants, messages and read receipts." "ASP .NET Core Web API" "Service"
+                messageDb = container "MessageDB" "Contains chats, participants, messages and message receipts." "PostgreSQL" "Database"
             }
 
             group "Engagement" {

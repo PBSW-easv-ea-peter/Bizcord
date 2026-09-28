@@ -1,0 +1,19 @@
+{
+	"Timestamp": "2025-09-03T10:16:08.123Z",
+	"Level": "Error",
+	"Location": {
+		"Service": "BookingOrchestrator",
+		"FilePath": "/some/file/path.cs",
+		"LineNumber": 13,
+		"MemberName": "Method1"
+	},
+	"Tracing": {
+		"TraceId": "xyz",
+		"SpanId": "def",
+		"ParentId": "abc"
+	},
+	"Message": "Discrepancy detected: client notified success but booking not persisted",
+	"Payload": {
+		"SomeProperty": "some value"
+	}
+}
