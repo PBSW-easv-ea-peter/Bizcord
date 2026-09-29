@@ -59,6 +59,17 @@ En besked er sendt. `recipientUserIds` er aktive deltagere minus afsenderen – 
 - **Ingen garanteret rækkefølge** på tværs af events. Brug tidspunkterne.
 - Consumers bør være **tolerante**: ignorér ukendte felter.
 
+### Tracing
+Hver besked har headeren `traceparent` ([W3C Trace Context](https://www.w3.org/TR/trace-context/), fx `00-<traceId>-<spanId>-01`), når den publiceres inden for en trace, fx et HTTP-request.
+Consumers bør starte deres egen span med den som parent. Så får logs på tværs af services samme `TraceId` (se `docs/logging-template.json`).
+
+### Kendte consumers
+| Consumer | Subscription | Events | Bruger til |
+|---|---|---|---|
+| Real-Time Communication (RTC) | `real-time-server` | alle tre | Push til klienter (i dag: logning) |
+
+Køen oprettes først, når en consumer abonnerer. Events, der publiceres før det, går tabt.
+
 ### Versionering
 Nye felter tilføjes uden varsel og er ikke-brydende. En brydende ændring (fjernet eller omdøbt felt, ændret betydning) udgives under et nyt navn, fx `chat.message-sent.v2`, og det gamle publiceres parallelt i en overgangsperiode.
 

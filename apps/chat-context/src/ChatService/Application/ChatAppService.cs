@@ -1,3 +1,4 @@
+using Bizcord.Logging;
 using ChatService.Contracts;
 using ChatService.Domain;
 
@@ -21,6 +22,7 @@ public sealed class ChatAppService(
         try
         {
             await chats.AddAsync(chat, cancellationToken);
+            logger.Information("Direct chat created.", new { ChatId = chat.Id });
             return (chat, true);
         }
         catch (ConflictException)
@@ -46,6 +48,7 @@ public sealed class ChatAppService(
     {
         var chat = Chat.CreateGroup(creatorUserId, new ChatTitle(title), time.GetUtcNowInMicroseconds());
         await chats.AddAsync(chat, cancellationToken);
+        logger.Information("Group chat created.", new { ChatId = chat.Id });
         return chat;
     }
 

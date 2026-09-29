@@ -7,4 +7,12 @@
   <Folder Name="/apps/chat-context/tests/">
     <Project Path="apps/chat-context/tests/ChatService.Tests/ChatService.Tests.csproj" />
   </Folder>
+  <Folder Name="/apps/real-time-communication-microservice/" />
+  <Folder Name="/apps/real-time-communication-microservice/src/">
+    <Project Path="apps/real-time-communication-microservice/src/RealTimeCommunicationServer/RealTimeCommunicationServer.csproj" />
+  </Folder>
+  <Folder Name="/libs/">
+    <Project Path="libs/Bizcord.Logging.Tests/Bizcord.Logging.Tests.csproj" />
+    <Project Path="libs/Bizcord.Logging/Bizcord.Logging.csproj" />
+  </Folder>
 </Solution>

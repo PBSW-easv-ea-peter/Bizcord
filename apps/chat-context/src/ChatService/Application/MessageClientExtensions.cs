@@ -1,3 +1,5 @@
+using Bizcord.Logging;
+
 namespace ChatService.Application;
 
 internal static class MessageClientExtensions
@@ -14,7 +16,7 @@ internal static class MessageClientExtensions
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to publish {EventType}. The change is saved, but the event is lost.", typeof(T).Name);
+            logger.Error("Failed to publish event. The change is saved, but the event is lost.", new { EventType = typeof(T).Name }, ex);
         }
     }
 }

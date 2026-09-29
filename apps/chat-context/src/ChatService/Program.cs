@@ -1,3 +1,4 @@
+using Bizcord.Logging;
 using ChatService.Application;
 using ChatService.Infrastructure.Messaging;
 using ChatService.Infrastructure.Persistence;
@@ -5,6 +6,9 @@ using ChatService.Infrastructure.Web;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Logging: skabelon-JSON til stdout (libs/Bizcord.Logging)
+builder.AddBizcordLogging(builder.Configuration["Logging:ServiceName"] ?? "ChatService");
 
 // Persistence
 var chatDbConnectionString = builder.Configuration.GetConnectionString("ChatDb")
@@ -36,7 +40,6 @@ builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 builder.Services.AddHealthChecks();
 
 builder.Services.AddControllers();
-builder.Services.AddLogging();
 
 var app = builder.Build();
 

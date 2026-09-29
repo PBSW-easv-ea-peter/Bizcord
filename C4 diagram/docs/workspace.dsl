@@ -36,8 +36,10 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram)" {
                 realTimeCommunicationService = container "Real-Time Communication Service" "Subscribes to domain events via RabbitMQ (EasyNetQ) and pushes real-time updates/notifications to clients." "ASP.NET Core Web API (EasyNetQ)" "Event-hub" {
                     messagesController = component "MessagesController" "Manual test endpoint (POST /api/Messages) used to verify the publish pipeline. Not a finalized part of the domain API - more/other endpoints may be added later." "ASP.NET Core Web API Controller"
                     messageClient = component "IMessageClient" "Abstraction over the message broker (Publish/Subscribe), decouples the service from a specific broker technology so it can be swapped later (e.g. Kafka)." "C# Interface"
-                    rabbitMqMessageClient = component "RabbitMqMessageClient" "EasyNetQ-based implementation of IMessageClient that talks to RabbitMQ." "C# / EasyNetQ"
-                    handleMessages = component "HandleMessages" "Subscribes via IMessageClient on startup; currently only logs received messages." "ASP.NET Core BackgroundService"
+                    rabbitMqMessageClient = component "RabbitMqMessageClient" "EasyNetQ-based implementation of IMessageClient that talks to RabbitMQ. Maps logical event names (e.g. chat.message-sent) to RTC's own types and continues the publisher's trace from the traceparent header." "C# / EasyNetQ"
+                    handleMessages = component "HandleMessages" "Subscribes once per message type found by handler discovery and dispatches each message to its handlers in a new DI scope. Knows no concrete message types." "ASP.NET Core BackgroundService"
+                    messageHandlerRegistration = component "MessageHandlerRegistration" "Scans the assembly on startup for IMessageHandler<T> implementations and registers them in DI (handler discovery)." "C# / Reflection"
+                    messageHandlers = component "Message handlers" "One IMessageHandler<T> per message type: PingMessage, MessageSent, ParticipantAdded, MessagesSeen. Currently only log ids - push to clients comes later." "C# classes"
                 }
                 // Fremtidig udvidelse, jf. beslutning: egen DB til fx de seneste 30 notifikationer.
                 // realTimeCommunicationDb = container "RealTimeCommunicationDB" "Stores recent notifications (e.g. last 30)." "RDBMS" "Database"
@@ -82,7 +84,10 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram)" {
 
         // Component-level relationships for Real-Time Communication Service
         messagesController -> messageClient "Publish<PingMessage>"
-        handleMessages -> messageClient "Subscribe<PingMessage>"
+        handleMessages -> messageClient "Subscribe<T> per discovered message type"
+        handleMessages -> messageHandlers "Dispatches message to"
+        messageHandlerRegistration -> messageHandlers "Discovers and registers"
+        messageHandlerRegistration -> handleMessages "Provides message types (MessageHandlerRegistry)"
         rabbitMqMessageClient -> rabbitMq "Publish/Subscribe messages via EasyNetQ (IBus)"
     }
 

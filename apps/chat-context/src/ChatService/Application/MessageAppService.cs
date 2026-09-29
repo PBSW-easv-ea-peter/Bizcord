@@ -1,3 +1,4 @@
+using Bizcord.Logging;
 using ChatService.Contracts;
 using ChatService.Domain;
 
@@ -21,6 +22,7 @@ public sealed class MessageAppService(
 
         var message = Message.Send(chat, senderUserId, new MessageContent(content), time.GetUtcNowInMicroseconds());
         await messages.AddAsync(message, cancellationToken);
+        logger.Information("Message sent.", new { ChatId = chat.Id, MessageId = message.Id });
 
         // Fedt event: modtagerne er med, så RTC kan pushe uden at kalde tilbage.
         var recipients = chat.Participants
@@ -54,6 +56,8 @@ public sealed class MessageAppService(
 
         var now = time.GetUtcNowInMicroseconds();
         var marked = await receipts.MarkSeenUpToAsync(userId, upTo, now, cancellationToken);
+
+        logger.Information("Messages marked as seen.", new { ChatId = chat.Id, UpToMessageId = upTo.Id, Marked = marked });
 
         // Kun når noget faktisk ændrede sig - gentagne kald giver ikke støj på bussen.
         if (marked > 0)
