@@ -19,8 +19,8 @@ services:
 
   realtimecommunicationserver:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..  # repo-roden, så libs/Bizcord.Logging er med
+      dockerfile: apps/real-time-communication-microservice/Dockerfile
     container_name: realtimecommunicationserver
     ports:
       - "8080:8080"

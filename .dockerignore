@@ -1,5 +1,9 @@
 **/bin/
 **/obj/
+**/tests/
 .git/
 .vs/
 .vscode/
+.idea/
+C4 diagram/
+docs/
