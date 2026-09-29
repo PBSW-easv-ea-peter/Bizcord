@@ -4,6 +4,10 @@
 .git/
 .vs/
 .vscode/
+<<<<<<< HEAD:.dockerignore
 .idea/
 C4 diagram/
 docs/
+=======
+**/.idea/
+>>>>>>> 9632f18c63de59358dfd01da5f1c1e24e91b0e34:apps/real-time-communication-microservice/.dockerignore
