@@ -143,7 +143,7 @@ public class ChatAppServiceTests
     [Fact]
     public async Task Time_IsRoundedToMicroseconds()
     {
-        var withSubMicroseconds = Now.AddTicks(1234567); // 123,4567 ms
+        var withSubMicroseconds = Now.AddTicks(1234567); // 123.4567 ms
         var service = CreateService(_messageClient, withSubMicroseconds);
 
         var chat = await service.CreateGroupAsync(Guid.NewGuid(), "Team");

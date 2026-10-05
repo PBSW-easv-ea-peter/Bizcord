@@ -6,7 +6,7 @@ namespace ChatService.Infrastructure.Messaging;
 
 public sealed class RabbitMqMessageClient(IBus bus) : IMessageClient
 {
-    /// <summary>W3C Trace Context-header - consumeren fortsætter samme trace. Se docs/contracts.md.</summary>
+    /// <summary>W3C Trace Context header - the consumer continues the same trace. See docs/contracts.md.</summary>
     public const string TraceParentHeader = "traceparent";
 
     public Task PublishAsync<T>(T message, CancellationToken cancellationToken = default) =>

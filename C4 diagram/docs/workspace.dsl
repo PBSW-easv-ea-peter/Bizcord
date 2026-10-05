@@ -44,13 +44,13 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram)" {
                     presenceTracker = component "PresenceTracker" "Who is connected right now - counts connections per user (multiple devices). In-memory, single instance." "C# singleton"
                     clientNotifier = component "IClientNotifier" "Abstraction over push (SignalRClientNotifier via IHubContext), so handlers can be tested without SignalR." "C# Interface"
                 }
-                // Fremtidig udvidelse, jf. beslutning: egen DB til fx de seneste 30 notifikationer.
+                // Future extension, per decision: own DB for e.g. the latest 30 notifications.
                 // realTimeCommunicationDb = container "RealTimeCommunicationDB" "Stores recent notifications (e.g. last 30)." "RDBMS" "Database"
             }
 
-            // RabbitMQ ligger "løst" i systemet (ikke i en group) - den er delt infrastruktur på tværs
-            // af bounded contexts, ikke selv en context nogen af teamsene ejer.
-            rabbitMq = container "RabbitMQ" "Message broker for event-driven kommunikation mellem microservices - bredere end kun notifikationer." "RabbitMQ" "Message Broker"
+            // RabbitMQ sits "loose" in the system (not in a group) - it is shared infrastructure across
+            // bounded contexts, not itself a context owned by any of the teams.
+            rabbitMq = container "RabbitMQ" "Message broker for event-driven communication between microservices - broader than just notifications." "RabbitMQ" "Message Broker"
         }
 
         // Relationships
@@ -73,8 +73,8 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram)" {
         messageService -> messageDb "Read/Write"
         engagementService -> engagementDb "Read/Write"
 
-        // RabbitMQ bruges bredere end notifikationer - services publisher events til broker'en,
-        // og Real-Time Communication Service er én af (potentielt flere) forbrugere, der abonnerer.
+        // RabbitMQ is used more broadly than notifications - services publish events to the broker,
+        // and Real-Time Communication Service is one of (potentially several) consumers that subscribe.
         channelService -> rabbitMq "Publish: update"
         messageService -> rabbitMq "Publish: message"
         engagementService -> rabbitMq "Publish: engagement"

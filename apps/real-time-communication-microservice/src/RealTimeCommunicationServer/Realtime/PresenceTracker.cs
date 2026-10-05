@@ -3,8 +3,8 @@ using System.Collections.Concurrent;
 namespace RealTimeCommunicationServer.Realtime;
 
 /// <summary>
-/// Hvem er forbundet lige nu. Tæller forbindelser pr. bruger, så en bruger med to enheder
-/// først er offline, når den sidste lukker. Kun i hukommelsen - én instans (backplane er parkeret).
+/// Who is connected right now. Counts connections per user, so a user with two devices
+/// is only offline once the last one closes. In-memory only - single instance (backplane is parked).
 /// </summary>
 public class PresenceTracker
 {
@@ -17,7 +17,7 @@ public class PresenceTracker
     {
         var remaining = _connections.AddOrUpdate(userId, 0, (_, count) => count - 1);
 
-        // Kun fjern, hvis tælleren stadig er 0 - en ny forbindelse kan være kommet imellem.
+        // Only remove if the counter is still 0 - a new connection may have arrived in between.
         if (remaining <= 0)
             _connections.TryRemove(new KeyValuePair<Guid, int>(userId, remaining));
     }

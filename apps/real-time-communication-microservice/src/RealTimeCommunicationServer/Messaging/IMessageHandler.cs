@@ -1,8 +1,8 @@
 namespace RealTimeCommunicationServer.Messaging;
 
 /// <summary>
-/// Håndterer én beskedtype. Implementeringer findes og registreres automatisk af AddMessageHandlers -
-/// en ny beskedtype kræver kun en ny klasse.
+/// Handles one message type. Implementations are discovered and registered automatically by AddMessageHandlers -
+/// a new message type only requires a new class.
 /// </summary>
 public interface IMessageHandler<in T>
 {

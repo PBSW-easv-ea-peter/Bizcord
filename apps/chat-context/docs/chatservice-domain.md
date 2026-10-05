@@ -2,7 +2,7 @@
 classDiagram
     direction LR
  
-    %% Aggregat: Chat (rod) + ChatParticipant
+    %% Aggregate: Chat (root) + ChatParticipant
     class Chat {
         +UUID id
         +ChatType type
@@ -23,7 +23,7 @@ classDiagram
         +DateTime? leftAt
     }
  
-    %% Aggregat: Message (rod) - refererer Chat via id
+    %% Aggregate: Message (root) - references Chat by id
     class Message {
         +UUID id
         +UUID chatId
@@ -36,8 +36,8 @@ classDiagram
         +Send(chat, sender, content)$
     }
  
-    %% Første gang en bruger fik leveret/så en besked - overskrives aldrig
-    %% Identitet: (messageId, userId)
+    %% The first time a user had a message delivered/saw it - never overwritten
+    %% Identity: (messageId, userId)
     class MessageReceipt {
         +UUID messageId
         +UUID userId
@@ -83,9 +83,9 @@ classDiagram
     %% Message --> MessageType (NOT mvp)
 ```
 
-## Invarianter
-- **Direct:** præcis 2 forskellige brugere, begge `Member`, ingen titel, ingen nye deltagere.
-- **Group:** har en titel. Opretteren bliver `Owner`. Kun `Owner`/`Admin` kan tilføje deltagere. En bruger kan kun være deltager én gang.
-- **Send:** kun aktive deltagere (`leftAt` er tom) kan sende.
-- **Receipt:** `deliveredAt` og `seenAt` sættes første gang og overskrives aldrig.
-- **ChatTitle:** trimmet, 1-200 tegn. **MessageContent:** ikke tom, maks. 4000 tegn.
+## Invariants
+- **Direct:** exactly 2 distinct users, both `Member`, no title, no new participants.
+- **Group:** has a title. The creator becomes `Owner`. Only `Owner`/`Admin` can add participants. A user can only be a participant once.
+- **Send:** only active participants (`leftAt` is empty) can send.
+- **Receipt:** `deliveredAt` and `seenAt` are set the first time and never overwritten.
+- **ChatTitle:** trimmed, 1-200 characters. **MessageContent:** not empty, max 4000 characters.

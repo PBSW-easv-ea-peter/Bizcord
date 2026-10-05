@@ -4,13 +4,13 @@ using ChatService.Contracts;
 namespace ChatService.Tests.Messaging;
 
 /// <summary>
-/// Consumer-kontrakt: det ChatService har brug for fra RTC's 'rtc.message-delivered'.
-/// Input er JSON, som det står på RabbitMQ (real-time-communication-microservice/docs/contracts.md),
-/// inkl. felter vi ikke bruger (chatId) og et ukendt felt - tolerant reader.
+/// Consumer contract: what ChatService needs from RTC's 'rtc.message-delivered'.
+/// Input is JSON as it appears on RabbitMQ (real-time-communication-microservice/docs/contracts.md),
+/// including fields we don't use (chatId) and an unknown field - tolerant reader.
 /// </summary>
 public class MessageDeliveredConsumerContractTests
 {
-    // Samme options som AddChatMessaging bruger til EasyNetQ.
+    // Same options that AddChatMessaging uses for EasyNetQ.
     private static readonly JsonSerializerOptions WireFormat = new(JsonSerializerDefaults.Web);
 
     [Fact]

@@ -3,14 +3,14 @@ using System.Reflection;
 namespace RealTimeCommunicationServer.Messaging;
 
 /// <summary>
-/// Abonnerer på hver beskedtype, der har en handler (se MessageHandlerRegistry), og sender beskeden videre
-/// til alle handlers for typen. Kender ingen konkrete beskedtyper.
-/// Abonnerer i StartAsync, så hosten først melder sig klar, når køerne er bundet - ellers kan events,
-/// der kommer i mellemtiden, gå tabt.
+/// Subscribes to every message type that has a handler (see MessageHandlerRegistry) and forwards the message
+/// to all handlers for that type. Knows no concrete message types.
+/// Subscribes in StartAsync so the host only reports ready once the queues are bound - otherwise events
+/// arriving in the meantime can be lost.
 /// </summary>
 public class HandleMessages : IHostedService, IDisposable
 {
-    // Giver handlers et token, der annulleres ved shutdown (StartAsync's token gælder kun opstarten).
+    // Gives handlers a token that is cancelled on shutdown (StartAsync's token only covers startup).
     private readonly CancellationTokenSource _stopping = new();
 
     private const string SubscriptionId = "real-time-server";
@@ -35,7 +35,7 @@ public class HandleMessages : IHostedService, IDisposable
     public async Task StartAsync(
         CancellationToken cancellationToken)
     {
-        // Typen kendes først ved runtime, så den generiske metode lukkes med reflection - det eneste sted.
+        // The type is only known at runtime, so the generic method is closed via reflection - the only place.
         foreach (var messageType in _registry.MessageTypes)
             await (Task)SubscribeMethod.MakeGenericMethod(messageType).Invoke(this, [_stopping.Token])!;
     }
@@ -49,8 +49,8 @@ public class HandleMessages : IHostedService, IDisposable
 
     public void Dispose() => _stopping.Dispose();
 
-    // Én subscription pr. type, ikke pr. handler: to subscriptions med samme id deler kø
-    // og ville konkurrere om beskederne i stedet for at få hver sin kopi.
+    // One subscription per type, not per handler: two subscriptions with the same id share a queue
+    // and would compete for the messages instead of each getting its own copy.
     private Task SubscribeAsync<T>(
         CancellationToken stoppingToken)
     {
@@ -58,7 +58,7 @@ public class HandleMessages : IHostedService, IDisposable
             SubscriptionId,
             async message =>
             {
-                // Ét scope pr. besked, ligesom ét pr. HTTP-request - så handlers kan have scoped afhængigheder.
+                // One scope per message, like one per HTTP request - so handlers can have scoped dependencies.
                 await using var scope = _scopeFactory.CreateAsyncScope();
 
                 foreach (var handler in scope.ServiceProvider.GetServices<IMessageHandler<T>>())

@@ -5,8 +5,8 @@ using Serilog.Formatting.Json;
 namespace Bizcord.Logging;
 
 /// <summary>
-/// Skriver én JSON-linje pr. log-event i formen fra docs/logging-template.json:
-/// Timestamp, Level, Location, Tracing, Message, Payload. Alt der ikke har et fast felt, havner i Payload.
+/// Writes one JSON line per log event in the shape from docs/logging-template.json:
+/// Timestamp, Level, Location, Tracing, Message, Payload. Anything without a fixed field ends up in Payload.
 /// </summary>
 public sealed class TemplateJsonFormatter : ITextFormatter
 {
@@ -59,7 +59,7 @@ public sealed class TemplateJsonFormatter : ITextFormatter
             if (!first)
                 output.Write(',');
 
-            // Skabelonen har intet exception-felt - det lægges i Payload, så top-niveauet forbliver låst.
+            // The template has no exception field - it goes in Payload, so the top level stays fixed.
             output.Write("\"Exception\":{\"Type\":");
             JsonValueFormatter.WriteQuotedJsonString(ex.GetType().FullName ?? ex.GetType().Name, output);
             output.Write(",\"Message\":");

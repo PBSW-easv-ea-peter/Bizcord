@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ChatService.Tests.Api;
 
-/// <summary>Rigtig DB (Testcontainers), men fake broker - API-testene kræver ikke RabbitMQ.</summary>
+/// <summary>Real DB (Testcontainers), but a fake broker - the API tests don't need RabbitMQ.</summary>
 public sealed class ChatApiFactory : WebApplicationFactory<Program>
 {
     internal InMemoryMessageClient MessageClient { get; } = new();
@@ -21,7 +21,7 @@ public sealed class ChatApiFactory : WebApplicationFactory<Program>
         {
             services.AddSingleton<IMessageClient>(MessageClient);
 
-            // Consumeren ville forbinde til RabbitMQ ved opstart - den testes i MessageDeliveredConsumerTests.
+            // The consumer would connect to RabbitMQ on startup - it is tested in MessageDeliveredConsumerTests.
             services.Remove(services.Single(descriptor => descriptor.ImplementationType == typeof(MessageDeliveredConsumer)));
         });
     }

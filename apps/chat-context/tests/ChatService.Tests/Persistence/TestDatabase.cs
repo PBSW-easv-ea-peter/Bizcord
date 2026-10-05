@@ -4,8 +4,8 @@ using Testcontainers.PostgreSql;
 namespace ChatService.Tests.Persistence;
 
 /// <summary>
-/// Én Postgres-container pr. testkørsel (Testcontainers) med samme init-scripts som chatDB/compose.yaml.
-/// Kræver kun at Docker kører - containeren startes første gang, den bruges, og ryddes op af Ryuk.
+/// One Postgres container per test run (Testcontainers) with the same init scripts as chatDB/compose.yaml.
+/// Only requires Docker to be running - the container starts the first time it is used and is cleaned up by Ryuk.
 /// </summary>
 internal static class TestDatabase
 {
@@ -21,11 +21,11 @@ internal static class TestDatabase
             .WithDatabase("chatDB")
             .WithUsername("admin")
             .WithPassword("admin")
-            // Kopieres til output af csproj'en - samme scripts som compose bruger.
+            // Copied to the output by the csproj - the same scripts compose uses.
             .WithResourceMapping(new DirectoryInfo(Path.Combine(AppContext.BaseDirectory, "db-init")), "/docker-entrypoint-initdb.d/")
             .Build();
 
-        // Statisk init kan ikke være async. Sker én gang pr. testkørsel.
+        // Static initialization can't be async. Happens once per test run.
         container.StartAsync().GetAwaiter().GetResult();
         return container;
     }

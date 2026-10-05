@@ -1,6 +1,6 @@
 namespace ChatService.Domain;
 
-/// <summary>Aggregat-rod for en chat og dens deltagere.</summary>
+/// <summary>Aggregate root for a chat and its participants.</summary>
 public sealed class Chat
 {
     private readonly List<ChatParticipant> _participants;
@@ -40,7 +40,7 @@ public sealed class Chat
         ]);
     }
 
-    /// <summary>Genopbygning fra persistens - kører ikke oprettelses-invarianter.</summary>
+    /// <summary>Rehydration from persistence - does not run creation invariants.</summary>
     internal static Chat Restore(Guid id, ChatType type, ChatTitle? title, DateTimeOffset createdAt, IEnumerable<ChatParticipant> participants) =>
         new(id, type, title, createdAt, participants.ToList());
 
@@ -63,7 +63,7 @@ public sealed class Chat
 
     public bool CanSend(Guid userId) => FindActive(userId) is not null;
 
-    // Samme regel som CanSend i dag, men en anden intention - kan ændres uafhængigt.
+    // Same rule as CanSend today, but a different intent - can change independently.
     public bool CanRead(Guid userId) => FindActive(userId) is not null;
 
     private ChatParticipant? FindActive(Guid userId) =>

@@ -11,8 +11,8 @@ public sealed class DapperReceiptRepository(NpgsqlDataSource dataSource) : IRece
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
 
-        // Set-baseret version af MessageReceipt.Create + MarkSeen:
-        // ingen receipt på egne beskeder, og seen_at overskrives aldrig.
+        // Set-based version of MessageReceipt.Create + MarkSeen:
+        // no receipt on one's own messages, and seen_at is never overwritten.
         return await connection.ExecuteAsync(new CommandDefinition(
             """
             insert into message_receipts (message_id, user_id, seen_at)
@@ -40,9 +40,9 @@ public sealed class DapperReceiptRepository(NpgsqlDataSource dataSource) : IRece
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
 
-        // Set-baseret version af MessageReceipt.Create + MarkDelivered:
-        // kun aktive deltagere i chatten (eventet er input udefra - stol ikke på listen), ingen receipt
-        // for afsenderen, og delivered_at overskrives aldrig (seen_at røres ikke).
+        // Set-based version of MessageReceipt.Create + MarkDelivered:
+        // only active participants in the chat (the event is external input - don't trust the list), no receipt
+        // for the sender, and delivered_at is never overwritten (seen_at is left untouched).
         return await connection.ExecuteAsync(new CommandDefinition(
             """
             insert into message_receipts (message_id, user_id, delivered_at)

@@ -5,7 +5,7 @@ using RealTimeCommunicationServer.Realtime;
 
 namespace RealTimeCommunicationServer.Tests;
 
-/// <summary>Unit: handlerens logik med fakes - ingen SignalR, ingen RabbitMQ.</summary>
+/// <summary>Unit: the handler's logic with fakes - no SignalR, no RabbitMQ.</summary>
 public class MessageSentHandlerTests
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 5, 12, 0, 0, TimeSpan.Zero);
@@ -29,7 +29,7 @@ public class MessageSentHandlerTests
     [Fact]
     public async Task Handle_OnlineRecipients_PushesAndPublishesMessageDelivered()
     {
-        _presence.Connected(_bob); // Carol er offline
+        _presence.Connected(_bob); // Carol is offline
         var message = MessageFromAliceTo(_bob, _carol);
 
         await _handler.HandleAsync(message, CancellationToken.None);

@@ -1,39 +1,39 @@
-# ChatService – kontrakt mod omverdenen
+# ChatService – contract with the outside world
 
-Dette er det, andre services kan regne med. Alt andet (tabeller, klasser, sprog) er ChatService's egen sag og kan ændres uden varsel.
+This is what other services can rely on. Everything else (tables, classes, language) is ChatService's own business and can change without notice.
 
-## Generelle konventioner
-| Emne | Regel |
+## General conventions
+| Topic | Rule |
 |---|---|
-| Format | JSON, camelCase-feltnavne |
-| Id'er | UUID-strenge. **Uigennemsigtige** – sortér eller udled ikke noget af dem |
-| Tidspunkter | ISO 8601 med offset, altid UTC (fx `2026-09-28T12:00:00+00:00`) |
-| Rækkefølge | Udtrykkes med tidspunkter (`sentAt`), aldrig med id'er |
-| Enums | Strenge: `Direct`/`Group` (chat-type), `Member`/`Admin`/`Owner` (rolle) |
-| Fejl | ProblemDetails (RFC 9457), `application/problem+json` |
+| Format | JSON, camelCase field names |
+| Ids | UUID strings. **Opaque** – do not sort them or derive anything from them |
+| Timestamps | ISO 8601 with offset, always UTC (e.g. `2026-09-28T12:00:00+00:00`) |
+| Ordering | Expressed with timestamps (`sentAt`), never with ids |
+| Enums | Strings: `Direct`/`Group` (chat type), `Member`/`Admin`/`Owner` (role) |
+| Errors | ProblemDetails (RFC 9457), `application/problem+json` |
 
 ## REST API
-Alle kald kræver headeren `X-User-Id` (den bruger, der udfører handlingen). Den erstattes af et UserAuth-token senere.
+All calls require the `X-User-Id` header (the user performing the action). It will be replaced by a UserAuth token later.
 
-| Metode og sti | Body | Svar |
+| Method and path | Body | Response |
 |---|---|---|
-| `POST /chats/direct` | `{ "otherUserId" }` | 201 ny · 200 findes allerede (idempotent) |
+| `POST /chats/direct` | `{ "otherUserId" }` | 201 new · 200 already exists (idempotent) |
 | `POST /chats/group` | `{ "title" }` | 201 |
 | `GET /chats/{chatId}` | | 200 |
 | `POST /chats/{chatId}/participants` | `{ "userId" }` | 201 |
 | `POST /chats/{chatId}/messages` | `{ "content" }` | 201 |
-| `GET /chats/{chatId}/messages?before={messageId}&limit={1-100}` | | 200, nyeste først |
-| `POST /chats/{chatId}/messages/{messageId}/seen` | | 204 – alle andres beskeder *til og med* denne |
+| `GET /chats/{chatId}/messages?before={messageId}&limit={1-100}` | | 200, newest first |
+| `POST /chats/{chatId}/messages/{messageId}/seen` | | 204 – all other users' messages *up to and including* this one |
 | `GET /chats/{chatId}/messages/{messageId}/receipts` | | 200 |
 
-Fejlkoder: `400` ugyldigt input · `403` ikke (aktiv) deltager eller mangler rolle · `404` ukendt chat/besked · `409` findes allerede.
+Error codes: `400` invalid input · `403` not an (active) participant or missing role · `404` unknown chat/message · `409` already exists.
 
 ## Events (RabbitMQ)
-Hvert event har sit eget **topic-exchange** med det logiske navn. Beskedens `type`-header har samme navn.
-Abonnér ved at binde jeres egen kø til exchangen med routing key `#`. Der kræves ingen .NET og ingen delt kode.
+Each event has its own **topic exchange** with the logical name. The message's `type` header has the same name.
+Subscribe by binding your own queue to the exchange with routing key `#`. No .NET and no shared code required.
 
 ### `chat.message-sent`
-En besked er sendt. `recipientUserIds` er aktive deltagere minus afsenderen – nok til at pushe uden at kalde ChatService.
+A message has been sent. `recipientUserIds` are the active participants minus the sender – enough to push without calling ChatService.
 ```json
 {
   "messageId": "0192...", "chatId": "0192...", "senderUserId": "…",
@@ -48,35 +48,35 @@ En besked er sendt. `recipientUserIds` er aktive deltagere minus afsenderen – 
 ```
 
 ### `chat.messages-seen`
-Én pr. "set til og med"-handling (ikke én pr. besked). Publiceres kun, når mindst én besked blev markeret for første gang.
+One per "seen up to and including" action (not one per message). Published only when at least one message was marked for the first time.
 ```json
 { "chatId": "…", "userId": "…", "upToMessageId": "…", "seenAt": "2026-09-28T12:00:00+00:00" }
 ```
 
-### Leveringsgaranti
-- **At-most-once.** Events publiceres, efter ændringen er gemt. Er brokeren nede, logges fejlen, og eventet går tabt (der er ingen outbox endnu).
-  REST API'et er sandheden. Events er notifikationer.
-- **Ingen garanteret rækkefølge** på tværs af events. Brug tidspunkterne.
-- Consumers bør være **tolerante**: ignorér ukendte felter.
+### Delivery guarantee
+- **At-most-once.** Events are published after the change is saved. If the broker is down, the error is logged and the event is lost (there is no outbox yet).
+  The REST API is the source of truth. Events are notifications.
+- **No guaranteed ordering** across events. Use the timestamps.
+- Consumers should be **tolerant**: ignore unknown fields.
 
 ### Tracing
-Hver besked har headeren `traceparent` ([W3C Trace Context](https://www.w3.org/TR/trace-context/), fx `00-<traceId>-<spanId>-01`), når den publiceres inden for en trace, fx et HTTP-request.
-Consumers bør starte deres egen span med den som parent. Så får logs på tværs af services samme `TraceId` (se `docs/logging-template.json`).
+Each message carries the `traceparent` header ([W3C Trace Context](https://www.w3.org/TR/trace-context/), e.g. `00-<traceId>-<spanId>-01`) when it is published within a trace, e.g. an HTTP request.
+Consumers should start their own span with it as parent. That way logs across services share the same `TraceId` (see `docs/logging-template.json`).
 
-### Kendte consumers
-| Consumer | Subscription | Events | Bruger til |
+### Known consumers
+| Consumer | Subscription | Events | Used for |
 |---|---|---|---|
-| Real-Time Communication (RTC) | `real-time-server` | alle tre | Push af `chat.message-sent` til forbundne klienter (de to andre logges kun) |
+| Real-Time Communication (RTC) | `real-time-server` | all three | Pushing `chat.message-sent` to connected clients (the other two are only logged) |
 
-Køen oprettes først, når en consumer abonnerer. Events, der publiceres før det, går tabt.
+The queue is only created once a consumer subscribes. Events published before that are lost.
 
-### Versionering
-Nye felter tilføjes uden varsel og er ikke-brydende. En brydende ændring (fjernet eller omdøbt felt, ændret betydning) udgives under et nyt navn, fx `chat.message-sent.v2`, og det gamle publiceres parallelt i en overgangsperiode.
+### Versioning
+New fields are added without notice and are non-breaking. A breaking change (removed or renamed field, changed meaning) is released under a new name, e.g. `chat.message-sent.v2`, and the old one is published in parallel during a transition period.
 
-## Hvad ChatService har brug for fra andre
-| Fra | Hvad | Status |
+## What ChatService needs from others
+| From | What | Status |
 |---|---|---|
-| UserService | Gyldige `userId`'er. I dag stoler vi på `X-User-Id` og de id'er, vi får | Antaget |
-| UserService | Event når en bruger slettes/deaktiveres (fx `user.deleted`), så deltagelser kan afsluttes | Ønsket |
-| RTC | `rtc.message-delivered` (`messageId`, `deliveredToUserIds`, `deliveredAt`) → sætter `deliveredAt` på receipts. Subscription `chat-service`. Se [RTC's kontrakt](../../real-time-communication-microservice/docs/contracts.md) | Leveret – testet i `MessageDeliveredConsumerContractTests` |
-| UserAuth | Token i stedet for `X-User-Id` | Senere |
+| UserService | Valid `userId`s. Today we trust `X-User-Id` and the ids we receive | Assumed |
+| UserService | Event when a user is deleted/deactivated (e.g. `user.deleted`), so participations can be ended | Wanted |
+| RTC | `rtc.message-delivered` (`messageId`, `deliveredToUserIds`, `deliveredAt`) → sets `deliveredAt` on receipts. Subscription `chat-service`. See [RTC's contract](../../real-time-communication-microservice/docs/contracts.md) | Delivered – tested in `MessageDeliveredConsumerContractTests` |
+| UserAuth | Token instead of `X-User-Id` | Later |

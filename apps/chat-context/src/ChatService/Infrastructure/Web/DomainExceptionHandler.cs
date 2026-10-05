@@ -6,12 +6,12 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace ChatService.Infrastructure.Web;
 
-/// <summary>Oversætter domæne- og applikationsfejl til ProblemDetails (RFC 9457). Andre fejl giver 500.</summary>
+/// <summary>Translates domain and application errors to ProblemDetails (RFC 9457). Other errors yield 500.</summary>
 public sealed class DomainExceptionHandler(IProblemDetailsService problemDetails, ILogger<DomainExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        // Rækkefølgen betyder noget: subklasser før DomainException.
+        // Order matters: subclasses before DomainException.
         int? status = exception switch
         {
             NotFoundException => StatusCodes.Status404NotFound,
@@ -29,7 +29,7 @@ public sealed class DomainExceptionHandler(IProblemDetailsService problemDetails
             return false;
         }
 
-        // Klientfejl: forventelige og ikke et driftsproblem - Warning uden stacktrace.
+        // Client errors: expected and not an operational problem - Warning without stack trace.
         logger.Warning(exception.Message, payload);
 
         httpContext.Response.StatusCode = status.Value;

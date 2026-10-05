@@ -76,7 +76,7 @@ public class ChatRepositoryTests
     {
         var userA = Guid.NewGuid();
         var userB = Guid.NewGuid();
-        // To "requests" har begge fået null fra FindDirectAsync og opretter hver sin chat.
+        // Two "requests" both got null from FindDirectAsync and each creates its own chat.
         await _repository.AddAsync(Chat.CreateDirect(userA, userB, Now));
 
         await Assert.ThrowsAsync<ConflictException>(() =>
@@ -103,7 +103,7 @@ public class ChatRepositoryTests
         var chat = Chat.CreateGroup(owner, new ChatTitle("Team"), Now);
         await _repository.AddAsync(chat);
 
-        // To "requests" indlæser chatten før nogen af dem har gemt - domænets dublet-tjek ser intet.
+        // Two "requests" load the chat before either has saved - the domain's duplicate check sees nothing.
         var firstRequest = (await _repository.GetAsync(chat.Id))!;
         var secondRequest = (await _repository.GetAsync(chat.Id))!;
         await _repository.AddParticipantAsync(chat.Id, firstRequest.AddParticipant(owner, user, Now));

@@ -5,8 +5,8 @@ using Serilog.Events;
 namespace Bizcord.Logging;
 
 /// <summary>
-/// Serilog fanger selv TraceId og SpanId fra Activity.Current, men ikke parent.
-/// En rod-activity har ParentSpanId = 0000000000000000 - den udelades.
+/// Serilog captures TraceId and SpanId from Activity.Current by itself, but not the parent.
+/// A root activity has ParentSpanId = 0000000000000000 - it is omitted.
 /// </summary>
 public sealed class ActivityParentEnricher : ILogEventEnricher
 {

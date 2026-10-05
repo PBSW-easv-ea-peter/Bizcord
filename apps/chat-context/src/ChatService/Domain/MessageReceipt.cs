@@ -1,8 +1,8 @@
 namespace ChatService.Domain;
 
 /// <summary>
-/// Første gang en bruger fik leveret/så en besked. Tidspunkter overskrives aldrig.
-/// Identitet: (MessageId, UserId).
+/// The first time a user had a message delivered/saw it. Timestamps are never overwritten.
+/// Identity: (MessageId, UserId).
 /// </summary>
 public sealed class MessageReceipt
 {
@@ -27,7 +27,7 @@ public sealed class MessageReceipt
         return new MessageReceipt(message.Id, userId);
     }
 
-    /// <summary>Genopbygning fra persistens - kører ikke oprettelses-invarianter.</summary>
+    /// <summary>Rehydration from persistence - does not run creation invariants.</summary>
     internal static MessageReceipt Restore(Guid messageId, Guid userId, DateTimeOffset? deliveredAt, DateTimeOffset? seenAt) =>
         new(messageId, userId, deliveredAt, seenAt);
 

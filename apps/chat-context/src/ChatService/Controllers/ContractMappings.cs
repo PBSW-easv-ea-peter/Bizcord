@@ -3,7 +3,7 @@ using ChatService.Domain;
 
 namespace ChatService.Controllers;
 
-/// <summary>Domæne → kontrakt. Ligger i API-laget, så hverken Domain eller Contracts kender hinanden.</summary>
+/// <summary>Domain → contract. Lives in the API layer, so neither Domain nor Contracts know about each other.</summary>
 internal static class ContractMappings
 {
     public static ChatResponse ToResponse(this Chat chat) => new(

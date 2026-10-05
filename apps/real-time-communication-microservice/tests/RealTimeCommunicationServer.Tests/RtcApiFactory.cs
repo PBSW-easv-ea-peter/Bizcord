@@ -5,8 +5,8 @@ using Testcontainers.RabbitMq;
 namespace RealTimeCommunicationServer.Tests;
 
 /// <summary>
-/// RTC med rigtig RabbitMQ i en Testcontainer. Brugeren 'rabbitmq', fordi 'guest' kun må logge ind
-/// fra localhost inde i containeren. Containeren ryddes op af Ryuk.
+/// RTC with a real RabbitMQ in a Testcontainer. User 'rabbitmq', because 'guest' may only log in
+/// from localhost inside the container. The container is cleaned up by Ryuk.
 /// </summary>
 public sealed class RtcApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {

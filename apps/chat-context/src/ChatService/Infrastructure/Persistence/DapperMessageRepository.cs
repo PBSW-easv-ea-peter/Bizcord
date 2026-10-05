@@ -45,7 +45,7 @@ public sealed class DapperMessageRepository(NpgsqlDataSource dataSource) : IMess
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
 
-        // Keyset paging på (sent_at, id) - entydig rækkefølge også ved ens sent_at.
+        // Keyset paging on (sent_at, id) - unambiguous order even when sent_at is equal.
         var sql = before is null
             ? $"{SelectColumns} where chat_id = @ChatId order by sent_at desc, id desc limit @Limit"
             : $"{SelectColumns} where chat_id = @ChatId and (sent_at, id) < (@BeforeSentAt, @BeforeId) order by sent_at desc, id desc limit @Limit";

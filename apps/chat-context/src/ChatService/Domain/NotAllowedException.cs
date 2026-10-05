@@ -1,4 +1,4 @@
 namespace ChatService.Domain;
 
-/// <summary>Handlingen er gyldig, men brugeren må ikke udføre den.</summary>
+/// <summary>The action is valid, but the user is not allowed to perform it.</summary>
 public sealed class NotAllowedException(string message) : DomainException(message);

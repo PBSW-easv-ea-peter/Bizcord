@@ -7,13 +7,13 @@ using RealTimeCommunicationServer.Realtime;
 namespace RealTimeCommunicationServer.Tests;
 
 /// <summary>
-/// Consumer-kontrakt: det RTC har brug for fra 'chat.message-sent'. Input er JSON, som det står på
-/// RabbitMQ (apps/chat-context/docs/contracts.md) - ikke et C#-objekt - så testen fanger også
-/// navne- og formatfejl, ikke kun manglende felter. Et ukendt felt er med for at bevise tolerant reader.
+/// Consumer contract: what RTC needs from 'chat.message-sent'. Input is JSON as it appears on
+/// RabbitMQ (apps/chat-context/docs/contracts.md) - not a C# object - so the test also catches
+/// naming and format errors, not just missing fields. An unknown field is included to prove tolerant reader.
 /// </summary>
 public class MessageSentConsumerContractTests
 {
-    // Samme options som Program.cs bruger til EasyNetQ.
+    // Same options as Program.cs uses for EasyNetQ.
     private static readonly JsonSerializerOptions WireFormat = new(JsonSerializerDefaults.Web);
 
     private const string ChatServiceJson =

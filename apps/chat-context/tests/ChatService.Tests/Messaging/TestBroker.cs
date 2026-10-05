@@ -3,8 +3,8 @@ using Testcontainers.RabbitMq;
 namespace ChatService.Tests.Messaging;
 
 /// <summary>
-/// Én RabbitMQ-container pr. testkørsel (Testcontainers). Tilfældig port og brugeren 'rabbitmq' -
-/// 'guest' må kun logge ind fra localhost inde i containeren.
+/// One RabbitMQ container per test run (Testcontainers). Random port and the user 'rabbitmq' -
+/// 'guest' may only log in from localhost inside the container.
 /// </summary>
 internal static class TestBroker
 {
@@ -20,7 +20,7 @@ internal static class TestBroker
 
     public static string Password => User;
 
-    /// <summary>EasyNetQ-format, samme som ConnectionStrings:RabbitMq i appsettings.</summary>
+    /// <summary>EasyNetQ format, same as ConnectionStrings:RabbitMq in appsettings.</summary>
     public static string ConnectionString => $"host={Host}:{Port};username={User};password={User}";
 
     private static RabbitMqContainer Start()

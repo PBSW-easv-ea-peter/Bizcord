@@ -1,6 +1,6 @@
-# Samlet stack: RabbitMQ + Postgres + ChatService + RealTimeCommunicationServer.
-# Kør fra repo-roden: docker compose up --build
-# Må ikke køre samtidig med compose-filerne under apps/ (samme porte).
+# Full stack: RabbitMQ + Postgres + ChatService + RealTimeCommunicationServer.
+# Run from the repo root: docker compose up --build
+# Must not run at the same time as the compose files under apps/ (same ports).
 
 services:
   rabbitmq:
@@ -9,8 +9,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     healthcheck:
-      # Som rabbitmq-brugeren: kørt som root opretter CLI'en .erlang.cookie før serveren,
-      # så filen bliver root-ejet, og serveren fejler med eacces. su nulstiller PATH, derfor fuld PATH.
+      # As the rabbitmq user: run as root, the CLI creates .erlang.cookie before the server does,
+      # so the file ends up owned by root and the server fails with eacces. su resets PATH, hence the full PATH.
       test: ["CMD-SHELL", "su rabbitmq -s /bin/sh -c 'PATH=/opt/rabbitmq/sbin:/opt/erlang/bin:/usr/bin:/bin rabbitmq-diagnostics -q check_port_connectivity'"]
       interval: 2s
       timeout: 3s

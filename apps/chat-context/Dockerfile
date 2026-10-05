@@ -1,4 +1,4 @@
-# Build-context er repo-roden (ChatService refererer til libs/Bizcord.Logging):
+# Build context is the repo root (ChatService references libs/Bizcord.Logging):
 #   docker build -f apps/chat-context/Dockerfile .
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
@@ -9,7 +9,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Kun csproj-filer først, så restore-laget caches, indtil afhængighederne ændres.
+# Only the csproj files first, so the restore layer stays cached until dependencies change.
 COPY ["apps/chat-context/src/ChatService/ChatService.csproj", "apps/chat-context/src/ChatService/"]
 COPY ["libs/Bizcord.Logging/Bizcord.Logging.csproj", "libs/Bizcord.Logging/"]
 RUN dotnet restore "apps/chat-context/src/ChatService/ChatService.csproj"

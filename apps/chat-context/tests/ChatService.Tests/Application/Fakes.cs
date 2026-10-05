@@ -13,7 +13,7 @@ internal sealed class InMemoryChatRepository : IChatRepository
     public Dictionary<Guid, Chat> Chats { get; } = [];
     public List<ChatParticipant> AddedParticipants { get; } = [];
 
-    /// <summary>Simulerer en samtidig request: gemmes lige før AddAsync, som så giver en konflikt.</summary>
+    /// <summary>Simulates a concurrent request: saved just before AddAsync, which then fails with a conflict.</summary>
     public Chat? RaceWinner { get; set; }
 
     public Task<Chat?> GetAsync(Guid chatId, CancellationToken cancellationToken = default) =>
@@ -96,7 +96,7 @@ internal sealed class InMemoryReceiptRepository : IReceiptRepository
 {
     public List<(Guid UserId, Message UpTo, DateTimeOffset Now)> MarkSeenCalls { get; } = [];
 
-    /// <summary>Hvad MarkSeenUpToAsync returnerer (antal nyligt markerede).</summary>
+    /// <summary>What MarkSeenUpToAsync returns (number of newly marked).</summary>
     public int MarkedCount { get; set; }
 
     public Task<int> MarkSeenUpToAsync(Guid userId, Message upTo, DateTimeOffset now, CancellationToken cancellationToken = default)

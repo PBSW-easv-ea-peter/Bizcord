@@ -8,6 +8,6 @@ public interface IMessageRepository
 
     Task AddAsync(Message message, CancellationToken cancellationToken = default);
 
-    /// <summary>Nyeste først. Med <paramref name="before"/> hentes beskeder sendt før den.</summary>
+    /// <summary>Newest first. With <paramref name="before"/>, fetches messages sent before that one.</summary>
     Task<IReadOnlyList<Message>> GetPageAsync(Guid chatId, Message? before, int limit, CancellationToken cancellationToken = default);
 }

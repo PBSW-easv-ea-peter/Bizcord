@@ -9,7 +9,7 @@ namespace ChatService.Controllers;
 [Route("chats")]
 public sealed class ChatsController(ChatAppService chats) : ControllerBase
 {
-    /// <summary>Idempotent: 201 ved ny chat, 200 hvis den allerede findes.</summary>
+    /// <summary>Idempotent: 201 for a new chat, 200 if it already exists.</summary>
     [HttpPost("direct")]
     [ProducesResponseType<ChatResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ChatResponse>(StatusCodes.Status200OK)]
@@ -59,7 +59,7 @@ public sealed class ChatsController(ChatAppService chats) : ControllerBase
     {
         var participant = await chats.AddParticipantAsync(chatId, userId, request.UserId!.Value, cancellationToken);
 
-        // Deltageren har ingen egen ressource - Location peger på chatten.
+        // The participant has no resource of its own - Location points to the chat.
         return CreatedAtAction(nameof(Get), new { chatId }, participant.ToResponse());
     }
 }

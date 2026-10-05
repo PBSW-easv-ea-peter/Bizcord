@@ -1,4 +1,4 @@
 namespace ChatService.Domain;
 
-/// <summary>Handlingen er i konflikt med eksisterende tilstand (fx dublet).</summary>
+/// <summary>The action conflicts with existing state (e.g. a duplicate).</summary>
 public sealed class ConflictException(string message) : DomainException(message);

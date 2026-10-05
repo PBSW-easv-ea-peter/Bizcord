@@ -3,8 +3,8 @@ namespace ChatService.Application;
 internal static class TimeProviderExtensions
 {
     /// <summary>
-    /// Nu, afrundet til mikrosekunder - samme præcision som Postgres' timestamptz,
-    /// så et objekt i hukommelsen og samme objekt læst fra DB'en har ens tidspunkt.
+    /// Now, truncated to microseconds - same precision as Postgres' timestamptz,
+    /// so an object in memory and the same object read from the DB have identical timestamps.
     /// </summary>
     public static DateTimeOffset GetUtcNowInMicroseconds(this TimeProvider time)
     {

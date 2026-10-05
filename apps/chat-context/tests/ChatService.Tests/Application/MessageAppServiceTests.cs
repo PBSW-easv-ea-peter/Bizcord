@@ -162,7 +162,7 @@ public class MessageAppServiceTests
     [Fact]
     public async Task MarkDelivered_UnknownMessage_DoesNotThrow()
     {
-        _receipts.MarkedCount = 0; // som repository'et svarer for en ukendt besked
+        _receipts.MarkedCount = 0; // what the repository returns for an unknown message
 
         await _service.MarkDeliveredAsync(Guid.NewGuid(), [_bob], Now);
     }

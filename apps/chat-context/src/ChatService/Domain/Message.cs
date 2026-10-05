@@ -1,6 +1,6 @@
 namespace ChatService.Domain;
 
-/// <summary>Aggregat-rod for en besked. Refererer Chat via id.</summary>
+/// <summary>Aggregate root for a message. References Chat by id.</summary>
 public sealed class Message
 {
     public Guid Id { get; }
@@ -26,7 +26,7 @@ public sealed class Message
         return new Message(Guid.CreateVersion7(now), chat.Id, senderUserId, content, now);
     }
 
-    /// <summary>Genopbygning fra persistens - kører ikke oprettelses-invarianter.</summary>
+    /// <summary>Rehydration from persistence - does not run creation invariants.</summary>
     internal static Message Restore(Guid id, Guid chatId, Guid senderUserId, MessageContent content, DateTimeOffset sentAt) =>
         new(id, chatId, senderUserId, content, sentAt);
 }

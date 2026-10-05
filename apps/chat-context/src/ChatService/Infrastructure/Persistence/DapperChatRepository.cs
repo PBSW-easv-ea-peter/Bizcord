@@ -52,7 +52,7 @@ public sealed class DapperChatRepository(NpgsqlDataSource dataSource) : IChatRep
         return chatId is null ? null : await GetAsync(chatId.Value, cancellationToken);
     }
 
-    /// <summary>Rækkefølge-uafhængig nøgle for et brugerpar - en persistensdetalje, ikke et domænebegreb.</summary>
+    /// <summary>Order-independent key for a user pair - a persistence detail, not a domain concept.</summary>
     private static string DirectKey(Guid userA, Guid userB)
     {
         var (a, b) = (userA.ToString(), userB.ToString());
@@ -85,7 +85,7 @@ public sealed class DapperChatRepository(NpgsqlDataSource dataSource) : IChatRep
         }
         catch (PostgresException ex) when (ex.ConstraintName == "uq_chats_direct_key")
         {
-            // Samtidig oprettelse af samme direct-chat - den anden request nåede først.
+            // Concurrent creation of the same direct chat - the other request got there first.
             throw new ConflictException("A direct chat between these users already exists.");
         }
 
@@ -109,7 +109,7 @@ public sealed class DapperChatRepository(NpgsqlDataSource dataSource) : IChatRep
         }
         catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
         {
-            // Samtidig AddParticipant for samme bruger - domænets dublet-tjek så ikke den anden.
+            // Concurrent AddParticipant for the same user - the domain's duplicate check did not see the other one.
             throw new ConflictException("User is already a participant.");
         }
     }
