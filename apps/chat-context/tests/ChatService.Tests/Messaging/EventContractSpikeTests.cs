@@ -12,7 +12,7 @@ namespace ChatService.Tests.Messaging
 {
     /// <summary>
     /// Spike: beviser at event-kontrakten er uafhængig af C#-typer og sprog.
-    /// Kræver RabbitMQ: docker compose up -d rabbitmq (i real-time-communication-microservice).
+    /// RabbitMQ kører i en Testcontainer (se TestBroker).
     /// </summary>
     [Trait("Category", "Integration")]
     public class EventContractSpikeTests
@@ -26,7 +26,7 @@ namespace ChatService.Tests.Messaging
         private static ServiceProvider CreateServices(EventTypeNames? typeNames = null) =>
             new ServiceCollection()
                 .AddLogging()
-                .AddChatMessaging("localhost", typeNames)
+                .AddChatMessaging(TestBroker.ConnectionString, typeNames)
                 .BuildServiceProvider();
 
         [Fact]
@@ -42,7 +42,13 @@ namespace ChatService.Tests.Messaging
             var received = new TaskCompletionSource<OtherTeam.MessageSentV1>(TaskCreationOptions.RunContinuationsAsynchronously);
             await consumerServices.GetRequiredService<IBus>().PubSub.SubscribeAsync<OtherTeam.MessageSentV1>(
                 $"spike-{Guid.NewGuid()}",
-                (message, _) => { received.TrySetResult(message); return Task.CompletedTask; },
+                // Brokeren deles med andre tests, der også publicerer chat.message-sent - kun vores eget event tæller.
+                (message, _) =>
+                {
+                    if (message.MessageId == Event.MessageId)
+                        received.TrySetResult(message);
+                    return Task.CompletedTask;
+                },
                 config => config.WithAutoDelete());
 
             await publisherServices.GetRequiredService<IMessageClient>().PublishAsync(Event);
@@ -56,7 +62,10 @@ namespace ChatService.Tests.Messaging
         public async Task RawConsumer_SeesLogicalNamesAndCamelCaseJson()
         {
             // Ingen EasyNetQ, ingen C#-kontrakt - som en consumer skrevet i et andet sprog.
-            var factory = new ConnectionFactory { HostName = "localhost" };
+            var factory = new ConnectionFactory
+            {
+                HostName = TestBroker.Host, Port = TestBroker.Port, UserName = TestBroker.UserName, Password = TestBroker.Password
+            };
             await using var connection = await factory.CreateConnectionAsync();
             await using var channel = await connection.CreateChannelAsync();
             await channel.ExchangeDeclareAsync(EventNames.MessageSent, RabbitMQ.Client.ExchangeType.Topic, durable: true);
@@ -68,7 +77,11 @@ namespace ChatService.Tests.Messaging
             consumer.ReceivedAsync += (_, delivery) =>
             {
                 // Body-bufferen genbruges efter handleren - kopiér nu.
-                received.TrySetResult((delivery.Exchange, delivery.BasicProperties.Type, Encoding.UTF8.GetString(delivery.Body.Span)));
+                var body = Encoding.UTF8.GetString(delivery.Body.Span);
+
+                // Brokeren deles med andre tests - kun vores eget event tæller.
+                if (body.Contains(Event.MessageId.ToString()))
+                    received.TrySetResult((delivery.Exchange, delivery.BasicProperties.Type, body));
                 return Task.CompletedTask;
             };
             await channel.BasicConsumeAsync(queue.QueueName, autoAck: true, consumer);

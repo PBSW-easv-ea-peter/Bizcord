@@ -147,6 +147,27 @@ public class MessageAppServiceTests
     }
 
     [Fact]
+    public async Task MarkDelivered_PassesToRepository()
+    {
+        var messageId = Guid.NewGuid();
+
+        await _service.MarkDeliveredAsync(messageId, [_bob], Now);
+
+        var call = Assert.Single(_receipts.MarkDeliveredCalls);
+        Assert.Equal(messageId, call.MessageId);
+        Assert.Equal([_bob], call.UserIds);
+        Assert.Equal(Now, call.At);
+    }
+
+    [Fact]
+    public async Task MarkDelivered_UnknownMessage_DoesNotThrow()
+    {
+        _receipts.MarkedCount = 0; // som repository'et svarer for en ukendt besked
+
+        await _service.MarkDeliveredAsync(Guid.NewGuid(), [_bob], Now);
+    }
+
+    [Fact]
     public async Task GetReceipts_ByNonParticipant_ThrowsNotAllowed()
     {
         var message = await _service.SendAsync(_chat.Id, _alice, "Hej");

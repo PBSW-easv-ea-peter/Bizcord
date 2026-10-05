@@ -105,6 +105,14 @@ internal sealed class InMemoryReceiptRepository : IReceiptRepository
         return Task.FromResult(MarkedCount);
     }
 
+    public List<(Guid MessageId, IReadOnlyCollection<Guid> UserIds, DateTimeOffset At)> MarkDeliveredCalls { get; } = [];
+
+    public Task<int> MarkDeliveredAsync(Guid messageId, IReadOnlyCollection<Guid> userIds, DateTimeOffset at, CancellationToken cancellationToken = default)
+    {
+        MarkDeliveredCalls.Add((messageId, userIds, at));
+        return Task.FromResult(MarkedCount);
+    }
+
     public Task<IReadOnlyList<MessageReceipt>> GetForMessageAsync(Guid messageId, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<MessageReceipt>>([]);
 }

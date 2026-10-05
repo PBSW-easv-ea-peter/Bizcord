@@ -19,7 +19,8 @@ builder.Services.AddScoped<IMessageRepository, DapperMessageRepository>();
 builder.Services.AddScoped<IReceiptRepository, DapperReceiptRepository>();
 
 // Messaging
-builder.Services.AddChatMessaging(builder.Configuration["RabbitMq:Host"] ?? "localhost");
+builder.Services.AddChatMessaging(builder.Configuration.RabbitMqConnectionString());
+builder.Services.AddHostedService<MessageDeliveredConsumer>();
 
 // Application
 builder.Services.AddSingleton(TimeProvider.System);

@@ -4,6 +4,7 @@ using RealTimeCommunicationServer.Contracts;
 using RealTimeCommunicationServer.Messaging;
 using RealTimeCommunicationServer.Messaging.Handlers;
 using RealTimeCommunicationServer.Models;
+using RealTimeCommunicationServer.Realtime;
 
 namespace RealTimeCommunicationServer.Tests;
 
@@ -64,6 +65,11 @@ public class MessageHandlerDiscoveryTests
         new ServiceCollection()
             .AddLogging()
             .AddSingleton<Received>()
+            // MessageSentHandler's afhængigheder
+            .AddSingleton<PresenceTracker>()
+            .AddSingleton<IClientNotifier, FakeClientNotifier>()
+            .AddSingleton<IMessageClient, FakeMessageClient>()
+            .AddSingleton(TimeProvider.System)
             .AddMessageHandlers(assembly)
             .BuildServiceProvider();
 }
@@ -101,12 +107,21 @@ public class SecondTestMessageHandler : IMessageHandler<TestMessage>
     }
 }
 
-/// <summary>Husker subscriptions i stedet for at tale med RabbitMQ, så en besked kan afleveres direkte.</summary>
+/// <summary>
+/// Husker subscriptions og publicerede beskeder i stedet for at tale med RabbitMQ,
+/// så en besked kan afleveres direkte, og det publicerede kan verificeres.
+/// </summary>
 public class FakeMessageClient : IMessageClient
 {
     public List<(Type Type, string SubscriptionId, Delegate Handler)> Subscriptions { get; } = [];
 
-    public Task Publish<T>(T message, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public List<object> Published { get; } = [];
+
+    public Task Publish<T>(T message, CancellationToken cancellationToken = default)
+    {
+        Published.Add(message!);
+        return Task.CompletedTask;
+    }
 
     public Task Subscribe<T>(string subscriptionId, Func<T, Task> handler)
     {

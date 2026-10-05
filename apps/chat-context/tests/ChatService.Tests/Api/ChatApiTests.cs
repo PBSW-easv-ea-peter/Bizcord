@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace ChatService.Tests.Api;
 
-/// <summary>Hele HTTP-pipelinen mod chatDB. Kræver: docker compose -f chatDB/compose.yaml up -d</summary>
+/// <summary>Hele HTTP-pipelinen mod chatDB i en Testcontainer (se TestDatabase).</summary>
 [Trait("Category", "Integration")]
 public class ChatApiTests(ChatApiFactory factory) : IClassFixture<ChatApiFactory>
 {

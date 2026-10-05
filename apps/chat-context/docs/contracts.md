@@ -66,7 +66,7 @@ Consumers bør starte deres egen span med den som parent. Så får logs på tvæ
 ### Kendte consumers
 | Consumer | Subscription | Events | Bruger til |
 |---|---|---|---|
-| Real-Time Communication (RTC) | `real-time-server` | alle tre | Push til klienter (i dag: logning) |
+| Real-Time Communication (RTC) | `real-time-server` | alle tre | Push af `chat.message-sent` til forbundne klienter (de to andre logges kun) |
 
 Køen oprettes først, når en consumer abonnerer. Events, der publiceres før det, går tabt.
 
@@ -78,4 +78,5 @@ Nye felter tilføjes uden varsel og er ikke-brydende. En brydende ændring (fjer
 |---|---|---|
 | UserService | Gyldige `userId`'er. I dag stoler vi på `X-User-Id` og de id'er, vi får | Antaget |
 | UserService | Event når en bruger slettes/deaktiveres (fx `user.deleted`), så deltagelser kan afsluttes | Ønsket |
+| RTC | `rtc.message-delivered` (`messageId`, `deliveredToUserIds`, `deliveredAt`) → sætter `deliveredAt` på receipts. Subscription `chat-service`. Se [RTC's kontrakt](../../real-time-communication-microservice/docs/contracts.md) | Leveret – testet i `MessageDeliveredConsumerContractTests` |
 | UserAuth | Token i stedet for `X-User-Id` | Senere |

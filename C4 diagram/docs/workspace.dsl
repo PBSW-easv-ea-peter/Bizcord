@@ -37,15 +37,15 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram)" {
                     messagesController = component "MessagesController" "Manual test endpoint (POST /api/Messages) used to verify the publish pipeline. Not a finalized part of the domain API - more/other endpoints may be added later." "ASP.NET Core Web API Controller"
                     messageClient = component "IMessageClient" "Abstraction over the message broker (Publish/Subscribe), decouples the service from a specific broker technology so it can be swapped later (e.g. Kafka)." "C# Interface"
                     rabbitMqMessageClient = component "RabbitMqMessageClient" "EasyNetQ-based implementation of IMessageClient that talks to RabbitMQ. Maps logical event names (e.g. chat.message-sent) to RTC's own types and continues the publisher's trace from the traceparent header." "C# / EasyNetQ"
-                    handleMessages = component "HandleMessages" "Subscribes once per message type found by handler discovery and dispatches each message to its handlers in a new DI scope. Knows no concrete message types." "ASP.NET Core BackgroundService"
+                    handleMessages = component "HandleMessages" "Subscribes once per message type found by handler discovery (in StartAsync, so the host is only ready when queues are bound) and dispatches each message to its handlers in a new DI scope. Knows no concrete message types." "ASP.NET Core IHostedService"
                     messageHandlerRegistration = component "MessageHandlerRegistration" "Scans the assembly on startup for IMessageHandler<T> implementations and registers them in DI (handler discovery)." "C# / Reflection"
-                    messageHandlers = component "Message handlers" "One IMessageHandler<T> per message type: PingMessage, MessageSent, ParticipantAdded, MessagesSeen. Currently only log ids - push to clients comes later." "C# classes"
+                    messageHandlers = component "Message handlers" "One IMessageHandler<T> per message type: PingMessage, MessageSent, ParticipantAdded, MessagesSeen. MessageSentHandler pushes to online recipients and publishes rtc.message-delivered; the others only log ids." "C# classes"
+                    chatHub = component "ChatHub" "SignalR hub at /hubs/chat?userId=... Clients only receive (MessageReceived). Updates presence on connect/disconnect." "ASP.NET Core SignalR"
+                    presenceTracker = component "PresenceTracker" "Who is connected right now - counts connections per user (multiple devices). In-memory, single instance." "C# singleton"
+                    clientNotifier = component "IClientNotifier" "Abstraction over push (SignalRClientNotifier via IHubContext), so handlers can be tested without SignalR." "C# Interface"
                 }
                 // Fremtidig udvidelse, jf. beslutning: egen DB til fx de seneste 30 notifikationer.
                 // realTimeCommunicationDb = container "RealTimeCommunicationDB" "Stores recent notifications (e.g. last 30)." "RDBMS" "Database"
-
-                // TODO: ingen komponent pusher endnu til klienten (fx via SignalR/WebSockets).
-                // Kendt gap ift. L2-relationen "Push notification" - afventer beslutning om push-teknologi.
             }
 
             // RabbitMQ ligger "løst" i systemet (ikke i en group) - den er delt infrastruktur på tværs
@@ -78,8 +78,10 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram)" {
         channelService -> rabbitMq "Publish: update"
         messageService -> rabbitMq "Publish: message"
         engagementService -> rabbitMq "Publish: engagement"
-        realTimeCommunicationService -> rabbitMq "Subscribe"
+        realTimeCommunicationService -> rabbitMq "Subscribe: chat.*, Publish: rtc.message-delivered"
+        messageService -> rabbitMq "Subscribe: rtc.message-delivered (sets deliveredAt)"
 
+        client -> realTimeCommunicationService "Connects (SignalR, /hubs/chat)"
         realTimeCommunicationService -> client "Push notification"
 
         // Component-level relationships for Real-Time Communication Service
@@ -89,6 +91,12 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram)" {
         messageHandlerRegistration -> messageHandlers "Discovers and registers"
         messageHandlerRegistration -> handleMessages "Provides message types (MessageHandlerRegistry)"
         rabbitMqMessageClient -> rabbitMq "Publish/Subscribe messages via EasyNetQ (IBus)"
+        client -> chatHub "Connects, receives MessageReceived"
+        chatHub -> presenceTracker "Connected/Disconnected"
+        messageHandlers -> presenceTracker "Who of the recipients is online?"
+        messageHandlers -> clientNotifier "Push MessageReceived"
+        clientNotifier -> chatHub "Clients.Users(...) via IHubContext"
+        messageHandlers -> messageClient "Publish<MessageDelivered>"
     }
 
     views {

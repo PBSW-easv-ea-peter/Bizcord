@@ -9,6 +9,9 @@ public static class EventNames
     public const string MessageSent = "chat.message-sent";
     public const string ParticipantAdded = "chat.participant-added";
     public const string MessagesSeen = "chat.messages-seen";
+
+    /// <summary>Consumes - publiceres af Real-Time Communication Service.</summary>
+    public const string MessageDelivered = "rtc.message-delivered";
 }
 
 public sealed record MessageSent(
@@ -32,3 +35,12 @@ public sealed record MessagesSeen(
     Guid UserId,
     Guid UpToMessageId,
     DateTimeOffset SeenAt);
+
+/// <summary>
+/// ChatService' egen læsning af RTC's 'rtc.message-delivered' - kun de felter, vi bruger (tolerant reader).
+/// RTC har pushet beskeden til disse brugeres forbundne klienter.
+/// </summary>
+public sealed record MessageDelivered(
+    Guid MessageId,
+    IReadOnlyList<Guid> DeliveredToUserIds,
+    DateTimeOffset DeliveredAt);

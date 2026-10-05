@@ -2,7 +2,7 @@ namespace ChatService.Application;
 
 /// <summary>
 /// Abstraktion over message brokeren (samme mønster som i Real-Time Communication Service).
-/// Kun Publish - ChatService abonnerer ikke på noget endnu.
+/// Kun Publish - det ene abonnement (rtc.message-delivered) ligger i Infrastructure/Messaging/MessageDeliveredConsumer.
 /// </summary>
 public interface IMessageClient
 {

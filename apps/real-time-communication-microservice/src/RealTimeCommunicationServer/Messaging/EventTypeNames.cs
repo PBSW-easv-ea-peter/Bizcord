@@ -14,7 +14,8 @@ public class EventTypeNames : ITypeNameSerializer
     {
         [typeof(MessageSent)] = "chat.message-sent",
         [typeof(ParticipantAdded)] = "chat.participant-added",
-        [typeof(MessagesSeen)] = "chat.messages-seen"
+        [typeof(MessagesSeen)] = "chat.messages-seen",
+        [typeof(MessageDelivered)] = "rtc.message-delivered"
     };
 
     private readonly Dictionary<string, Type> _types;

@@ -14,7 +14,8 @@ public sealed class EventTypeNames : ITypeNameSerializer
     {
         [typeof(MessageSent)] = EventNames.MessageSent,
         [typeof(ParticipantAdded)] = EventNames.ParticipantAdded,
-        [typeof(MessagesSeen)] = EventNames.MessagesSeen
+        [typeof(MessagesSeen)] = EventNames.MessagesSeen,
+        [typeof(MessageDelivered)] = EventNames.MessageDelivered
     });
 
     private readonly IReadOnlyDictionary<Type, string> _names;

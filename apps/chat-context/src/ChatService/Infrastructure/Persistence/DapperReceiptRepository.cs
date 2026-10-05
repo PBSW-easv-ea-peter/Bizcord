@@ -36,6 +36,33 @@ public sealed class DapperReceiptRepository(NpgsqlDataSource dataSource) : IRece
             cancellationToken: cancellationToken));
     }
 
+    public async Task<int> MarkDeliveredAsync(Guid messageId, IReadOnlyCollection<Guid> userIds, DateTimeOffset at, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+
+        // Set-baseret version af MessageReceipt.Create + MarkDelivered:
+        // kun aktive deltagere i chatten (eventet er input udefra - stol ikke på listen), ingen receipt
+        // for afsenderen, og delivered_at overskrives aldrig (seen_at røres ikke).
+        return await connection.ExecuteAsync(new CommandDefinition(
+            """
+            insert into message_receipts (message_id, user_id, delivered_at)
+            select m.id, u.user_id, @At
+            from messages m
+            cross join unnest(@UserIds) as u(user_id)
+            join chat_participants p
+              on p.chat_id = m.chat_id
+             and p.user_id = u.user_id
+             and p.left_at is null
+            where m.id = @MessageId
+              and m.sender_user_id <> u.user_id
+            on conflict (message_id, user_id)
+            do update set delivered_at = excluded.delivered_at
+            where message_receipts.delivered_at is null
+            """,
+            new { MessageId = messageId, UserIds = userIds.ToArray(), At = DbTime.ToDb(at) },
+            cancellationToken: cancellationToken));
+    }
+
     public async Task<IReadOnlyList<MessageReceipt>> GetForMessageAsync(Guid messageId, CancellationToken cancellationToken = default)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);

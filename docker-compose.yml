@@ -9,7 +9,9 @@ services:
       - "5672:5672"
       - "15672:15672"
     healthcheck:
-      test: rabbitmq-diagnostics check_port_connectivity
+      # Som rabbitmq-brugeren: kørt som root opretter CLI'en .erlang.cookie før serveren,
+      # så filen bliver root-ejet, og serveren fejler med eacces. su nulstiller PATH, derfor fuld PATH.
+      test: ["CMD-SHELL", "su rabbitmq -s /bin/sh -c 'PATH=/opt/rabbitmq/sbin:/opt/erlang/bin:/usr/bin:/bin rabbitmq-diagnostics -q check_port_connectivity'"]
       interval: 2s
       timeout: 3s
       retries: 30

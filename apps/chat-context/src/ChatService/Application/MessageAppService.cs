@@ -64,6 +64,17 @@ public sealed class MessageAppService(
             await messageClient.TryPublishAsync(new MessagesSeen(chat.Id, userId, upTo.Id, now), logger);
     }
 
+    /// <summary>
+    /// Fra RTC's 'rtc.message-delivered'. Ingen adgangstjek - det er en intern notifikation, ikke et brugerkald.
+    /// En ukendt besked ignoreres: REST API'et er sandheden, events er notifikationer.
+    /// </summary>
+    public async Task MarkDeliveredAsync(Guid messageId, IReadOnlyCollection<Guid> userIds, DateTimeOffset deliveredAt, CancellationToken cancellationToken = default)
+    {
+        var marked = await receipts.MarkDeliveredAsync(messageId, userIds, deliveredAt, cancellationToken);
+
+        logger.Information("Message marked as delivered.", new { MessageId = messageId, Recipients = userIds.Count, Marked = marked });
+    }
+
     public async Task<IReadOnlyList<MessageReceipt>> GetReceiptsAsync(
         Guid chatId, Guid requestedByUserId, Guid messageId, CancellationToken cancellationToken = default)
     {

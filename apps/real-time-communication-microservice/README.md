@@ -5,9 +5,13 @@ Subscribes to domain events published by other Bizcord microservices via RabbitM
 ## Responsibilities
 
 - Subscribes to domain events on RabbitMQ via [EasyNetQ](https://easynetq.com/).
-- Exposes an `IMessageClient` abstraction (`Publish`/`Subscribe`) so the underlying broker can be swapped later (e.g. for Kafka) without changing the rest of the service.
+- Pushes new messages to connected clients via SignalR (`/hubs/chat?userId=…`) and tracks who is online (`PresenceTracker`).
+- Publishes `rtc.message-delivered` with the recipients the message was pushed to — ChatService uses it to set `deliveredAt` on receipts.
+- Exposes an `IMessageClient` abstraction (`Publish`/`Subscribe`) so the underlying broker can be swapped later (e.g. for Kafka) without changing the rest of the service. `IClientNotifier` does the same for push.
 
-> **Known gap:** there is currently no component that pushes received messages onward to clients (e.g. via SignalR/WebSockets) — `HandleMessages` only logs what it receives. See the component diagram (`RealTimeCommunicationComponents` view) for details.
+The contract (hub messages and events) is in [`docs/contracts.md`](docs/contracts.md).
+
+> **Not yet implemented:** push of `chat.participant-added` / `chat.messages-seen` (requires chat membership in RTC), client acknowledgement of delivery, token authentication on the hub, and a SignalR backplane for running more than one instance (presence is in-memory).
 
 ## Tech stack
 
@@ -19,9 +23,13 @@ Subscribes to domain events published by other Bizcord microservices via RabbitM
 
 ```
 src/RealTimeCommunicationServer/
+  Contracts/      Own view of ChatService' events + RTC's own (MessageDelivered, MessageReceived)
   Controllers/    Manual test endpoint (MessagesController)
-  Messaging/      IMessageClient, RabbitMqMessageClient, HandleMessages
+  Messaging/      IMessageClient, RabbitMqMessageClient, HandleMessages, handlers
   Models/         Message contracts (e.g. PingMessage)
+  Realtime/       ChatHub, PresenceTracker, IClientNotifier, QueryStringUserIdProvider
+tests/RealTimeCommunicationServer.Tests/
+  Unit, consumer contract and service tests. Service tests start RabbitMQ with Testcontainers - only Docker needs to run.
 ```
 
 ## Running locally

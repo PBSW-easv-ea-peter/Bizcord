@@ -61,4 +61,51 @@ public class ReceiptRepositoryTests
         var last = Assert.Single(await _receipts.GetForMessageAsync(m[3].Id));
         Assert.Equal(Now.AddMinutes(5), last.SeenAt);
     }
+
+    [Fact]
+    public async Task MarkDelivered_SkipsSenderAndKeepsFirstTimestamp()
+    {
+        var m = await CreateConversationAsync();
+
+        var marked = await _receipts.MarkDeliveredAsync(m[0].Id, [_bob, _alice], Now.AddMinutes(1)); // m[0] er Alices
+        var again = await _receipts.MarkDeliveredAsync(m[0].Id, [_bob], Now.AddMinutes(5));
+
+        Assert.Equal(1, marked); // kun Bob - ingen receipt for afsenderen
+        Assert.Equal(0, again);
+        var receipt = Assert.Single(await _receipts.GetForMessageAsync(m[0].Id));
+        Assert.Equal(_bob, receipt.UserId);
+        Assert.Equal(Now.AddMinutes(1), receipt.DeliveredAt);
+        Assert.Null(receipt.SeenAt);
+    }
+
+    [Fact]
+    public async Task MarkDelivered_AndSeen_DoNotOverwriteEachOther()
+    {
+        var m = await CreateConversationAsync();
+
+        await _receipts.MarkDeliveredAsync(m[0].Id, [_bob], Now.AddMinutes(1));
+        await _receipts.MarkSeenUpToAsync(_bob, upTo: m[0], Now.AddMinutes(2));
+
+        var receipt = Assert.Single(await _receipts.GetForMessageAsync(m[0].Id));
+        Assert.Equal(Now.AddMinutes(1), receipt.DeliveredAt);
+        Assert.Equal(Now.AddMinutes(2), receipt.SeenAt);
+    }
+
+    [Fact]
+    public async Task MarkDelivered_IgnoresUsersOutsideTheChat()
+    {
+        var m = await CreateConversationAsync();
+        var outsider = Guid.NewGuid();
+
+        var marked = await _receipts.MarkDeliveredAsync(m[0].Id, [_bob, outsider], Now.AddMinutes(1));
+
+        Assert.Equal(1, marked);
+        Assert.Equal(_bob, Assert.Single(await _receipts.GetForMessageAsync(m[0].Id)).UserId);
+    }
+
+    [Fact]
+    public async Task MarkDelivered_UnknownMessage_MarksNothing()
+    {
+        Assert.Equal(0, await _receipts.MarkDeliveredAsync(Guid.NewGuid(), [_bob], Now));
+    }
 }
