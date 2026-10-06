@@ -9,11 +9,12 @@
     - ChatParticipant
     - Evt. MessageReceipt (hvem har set beskeden)
 - Hvilke operationer skal andre kunne bede den om at udføre?
-    - MVP: Create chat, add participant, send message, get messages, mark as seen
-    - Senere: Edit/delete message, remove participant, update/delete chat, list my chats (GET /chats)
+    - MVP: Create chat, add participant, send message, get messages, edit/delete message (PUT/DELETE), mark as seen
+    - Senere: remove participant, update/delete chat, list my chats (GET /chats)
 - Hvilke informationer/events skal den kunne sende videre, når noget relevant er sket?
     - ParticipantAdded
     - MessageSent
+    - MessageEdited / MessageDeleted
     - MessageSeen
     - Evt. MessageDelivered
 - Hvilke informationer har den brug for, fra andre services

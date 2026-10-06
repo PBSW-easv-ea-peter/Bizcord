@@ -8,7 +8,8 @@ namespace ChatService.Infrastructure.Persistence;
 public sealed class DapperMessageRepository(NpgsqlDataSource dataSource) : IMessageRepository
 {
     private const string SelectColumns =
-        "select id, chat_id as ChatId, sender_user_id as SenderUserId, content, sent_at as SentAt from messages";
+        "select id, chat_id as ChatId, sender_user_id as SenderUserId, content, sent_at as SentAt, " +
+        "edited_at as EditedAt, deleted_at as DeletedAt from messages";
 
     public async Task<Message?> GetAsync(Guid messageId, CancellationToken cancellationToken = default)
     {
@@ -35,10 +36,32 @@ public sealed class DapperMessageRepository(NpgsqlDataSource dataSource) : IMess
                 message.Id,
                 message.ChatId,
                 message.SenderUserId,
-                Content = message.Content.Value,
+                Content = message.Content!.Value,
                 SentAt = DbTime.ToDb(message.SentAt)
             },
             cancellationToken: cancellationToken));
+    }
+
+    public async Task<bool> UpdateAsync(Message message, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+
+        var updated = await connection.ExecuteAsync(new CommandDefinition(
+            """
+            update messages
+            set content = @Content, edited_at = @EditedAt, deleted_at = @DeletedAt
+            where id = @Id and deleted_at is null
+            """,
+            new
+            {
+                message.Id,
+                Content = message.Content?.Value,
+                EditedAt = DbTime.ToDb(message.EditedAt),
+                DeletedAt = DbTime.ToDb(message.DeletedAt)
+            },
+            cancellationToken: cancellationToken));
+
+        return updated == 1;
     }
 
     public async Task<IReadOnlyList<Message>> GetPageAsync(Guid chatId, Message? before, int limit, CancellationToken cancellationToken = default)
@@ -68,15 +91,19 @@ public sealed class DapperMessageRepository(NpgsqlDataSource dataSource) : IMess
         row.Id,
         row.ChatId,
         row.SenderUserId,
-        new MessageContent(row.Content),
-        DbTime.FromDb(row.SentAt));
+        row.Content is null ? null : new MessageContent(row.Content),
+        DbTime.FromDb(row.SentAt),
+        DbTime.FromDb(row.EditedAt),
+        DbTime.FromDb(row.DeletedAt));
 
     private sealed class MessageRow
     {
         public Guid Id { get; init; }
         public Guid ChatId { get; init; }
         public Guid SenderUserId { get; init; }
-        public string Content { get; init; } = "";
+        public string? Content { get; init; }
         public DateTime SentAt { get; init; }
+        public DateTime? EditedAt { get; init; }
+        public DateTime? DeletedAt { get; init; }
     }
 }

@@ -36,12 +36,23 @@ Content-Type: application/json
 GET {{host}}/chats/{{chatId}}/messages?limit=20
 X-User-Id: {{alice}}
 
+### Bob redigerer sin besked
+PUT {{host}}/chats/{{chatId}}/messages/{{messageId}}
+X-User-Id: {{bob}}
+Content-Type: application/json
+
+{ "content": "Hej Alice!" }
+
 ### Alice markerer til og med beskeden som set
 POST {{host}}/chats/{{chatId}}/messages/{{messageId}}/seen
 X-User-Id: {{alice}}
 
 ### Bob ser receipts
 GET {{host}}/chats/{{chatId}}/messages/{{messageId}}/receipts
+X-User-Id: {{bob}}
+
+### Bob sletter beskeden (blød sletning, idempotent - 204 hver gang)
+DELETE {{host}}/chats/{{chatId}}/messages/{{messageId}}
 X-User-Id: {{bob}}
 
 ### Direct-chat (idempotent: 201 første gang, derefter 200)

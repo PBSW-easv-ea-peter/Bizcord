@@ -128,6 +128,80 @@ public class ChatApiTests(ChatApiFactory factory) : IClassFixture<ChatApiFactory
         await AssertProblemAsync(response, HttpStatusCode.Conflict);
     }
 
+    [Fact]
+    public async Task EditAndDelete_BySender_UpdatesTheMessageInTheHistory()
+    {
+        var (chat, message) = await CreateDirectChatWithMessageAsync();
+        var bob = ClientFor(_bob);
+
+        // Bob redigerer
+        var editResponse = await bob.PutAsJsonAsync($"/chats/{chat.Id}/messages/{message.Id}", new EditMessageRequest("Hej igen"));
+        Assert.Equal(HttpStatusCode.OK, editResponse.StatusCode);
+        var edited = (await editResponse.Content.ReadFromJsonAsync<MessageResponse>())!;
+        Assert.Equal("Hej igen", edited.Content);
+        Assert.NotNull(edited.EditedAt);
+        Assert.Contains(factory.MessageClient.Published, e => e is MessageEdited m && m.MessageId == message.Id);
+
+        // Bob sletter - to gange, idempotent
+        var deleteResponse = await bob.DeleteAsync($"/chats/{chat.Id}/messages/{message.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        deleteResponse = await bob.DeleteAsync($"/chats/{chat.Id}/messages/{message.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        Assert.Single(factory.MessageClient.Published, e => e is MessageDeleted m && m.MessageId == message.Id);
+
+        // Alice ser den som slettet i historikken
+        var page = await ClientFor(_alice).GetFromJsonAsync<List<MessageResponse>>($"/chats/{chat.Id}/messages");
+        var deleted = Assert.Single(page!);
+        Assert.Null(deleted.Content);
+        Assert.NotNull(deleted.DeletedAt);
+
+        // En slettet besked kan ikke redigeres
+        var editDeleted = await bob.PutAsJsonAsync($"/chats/{chat.Id}/messages/{message.Id}", new EditMessageRequest("Igen"));
+        await AssertProblemAsync(editDeleted, HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task EditAndDelete_ByOtherParticipant_Returns403ProblemDetails()
+    {
+        var (chat, message) = await CreateDirectChatWithMessageAsync();
+        var alice = ClientFor(_alice);
+
+        var edit = await alice.PutAsJsonAsync($"/chats/{chat.Id}/messages/{message.Id}", new EditMessageRequest("Hacket"));
+        var delete = await alice.DeleteAsync($"/chats/{chat.Id}/messages/{message.Id}");
+
+        await AssertProblemAsync(edit, HttpStatusCode.Forbidden);
+        await AssertProblemAsync(delete, HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Edit_InvalidContent_Returns400ProblemDetails()
+    {
+        var (chat, message) = await CreateDirectChatWithMessageAsync();
+
+        var response = await ClientFor(_bob).PutAsJsonAsync($"/chats/{chat.Id}/messages/{message.Id}", new EditMessageRequest(""));
+
+        await AssertProblemAsync(response, HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Delete_UnknownMessage_Returns404ProblemDetails()
+    {
+        var (chat, _) = await CreateDirectChatWithMessageAsync();
+
+        var response = await ClientFor(_bob).DeleteAsync($"/chats/{chat.Id}/messages/{Guid.NewGuid()}");
+
+        await AssertProblemAsync(response, HttpStatusCode.NotFound);
+    }
+
+    /// <summary>Direct-chat mellem Alice og Bob, hvor Bob har sendt "Hej".</summary>
+    private async Task<(ChatResponse Chat, MessageResponse Message)> CreateDirectChatWithMessageAsync()
+    {
+        var createResponse = await ClientFor(_alice).PostAsJsonAsync("/chats/direct", new CreateDirectChatRequest(_bob));
+        var chat = (await createResponse.Content.ReadFromJsonAsync<ChatResponse>())!;
+        var sendResponse = await ClientFor(_bob).PostAsJsonAsync($"/chats/{chat.Id}/messages", new SendMessageRequest("Hej"));
+        return (chat, (await sendResponse.Content.ReadFromJsonAsync<MessageResponse>())!);
+    }
+
     private async Task<ChatResponse> CreateGroupAsync()
     {
         var response = await ClientFor(_alice).PostAsJsonAsync("/chats/group", new CreateGroupChatRequest("Team"));

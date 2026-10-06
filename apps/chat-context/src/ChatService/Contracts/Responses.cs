@@ -19,8 +19,10 @@ public sealed record MessageResponse(
     Guid Id,
     Guid ChatId,
     Guid SenderUserId,
-    string Content,
-    DateTimeOffset SentAt);
+    string? Content,
+    DateTimeOffset SentAt,
+    DateTimeOffset? EditedAt,
+    DateTimeOffset? DeletedAt);
 
 public sealed record ReceiptResponse(
     Guid UserId,

@@ -9,6 +9,8 @@ public static class EventNames
     public const string MessageSent = "chat.message-sent";
     public const string ParticipantAdded = "chat.participant-added";
     public const string MessagesSeen = "chat.messages-seen";
+    public const string MessageEdited = "chat.message-edited";
+    public const string MessageDeleted = "chat.message-deleted";
 
     /// <summary>Consumes - publiceres af Real-Time Communication Service.</summary>
     public const string MessageDelivered = "rtc.message-delivered";
@@ -28,6 +30,21 @@ public sealed record ParticipantAdded(
     string Role,
     Guid AddedByUserId,
     DateTimeOffset JoinedAt);
+
+/// <summary>Samme modtagere som MessageSent, så RTC kan opdatere klienterne uden at kalde tilbage.</summary>
+public sealed record MessageEdited(
+    Guid MessageId,
+    Guid ChatId,
+    string Content,
+    DateTimeOffset EditedAt,
+    IReadOnlyList<Guid> RecipientUserIds);
+
+/// <summary>Uden indhold - det er netop slettet.</summary>
+public sealed record MessageDeleted(
+    Guid MessageId,
+    Guid ChatId,
+    DateTimeOffset DeletedAt,
+    IReadOnlyList<Guid> RecipientUserIds);
 
 /// <summary>Én pr. "til og med"-batch: alle andres beskeder til og med UpToMessageId er nu set af UserId.</summary>
 public sealed record MessagesSeen(

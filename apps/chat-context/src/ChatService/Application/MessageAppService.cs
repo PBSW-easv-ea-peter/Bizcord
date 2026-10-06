@@ -20,19 +20,54 @@ public sealed class MessageAppService(
     {
         var chat = await GetChatAsync(chatId, cancellationToken);
 
-        var message = Message.Send(chat, senderUserId, new MessageContent(content), time.GetUtcNowInMicroseconds());
+        var messageContent = new MessageContent(content);
+        var message = Message.Send(chat, senderUserId, messageContent, time.GetUtcNowInMicroseconds());
         await messages.AddAsync(message, cancellationToken);
         logger.Information("Message sent.", new { ChatId = chat.Id, MessageId = message.Id });
 
         // Fedt event: modtagerne er med, så RTC kan pushe uden at kalde tilbage.
-        var recipients = chat.Participants
-            .Where(p => p.IsActive && p.UserId != senderUserId)
-            .Select(p => p.UserId)
-            .ToList();
         await messageClient.TryPublishAsync(new MessageSent(
-            message.Id, chat.Id, senderUserId, message.Content.Value, message.SentAt, recipients), logger);
+            message.Id, chat.Id, senderUserId, messageContent.Value, message.SentAt, Recipients(chat, senderUserId)), logger);
 
         return message;
+    }
+
+    public async Task<Message> EditAsync(Guid chatId, Guid requestedByUserId, Guid messageId, string content, CancellationToken cancellationToken = default)
+    {
+        var chat = await GetChatAsync(chatId, cancellationToken);
+        var message = await GetMessageInChatAsync(chat.Id, messageId, cancellationToken);
+
+        var messageContent = new MessageContent(content);
+        message.Edit(chat, requestedByUserId, messageContent, time.GetUtcNowInMicroseconds());
+
+        if (!await messages.UpdateAsync(message, cancellationToken))
+            throw new ConflictException("A deleted message cannot be edited.");
+
+        logger.Information("Message edited.", new { ChatId = chat.Id, MessageId = message.Id });
+
+        await messageClient.TryPublishAsync(new MessageEdited(
+            message.Id, chat.Id, messageContent.Value, message.EditedAt!.Value, Recipients(chat, message.SenderUserId)), logger);
+
+        return message;
+    }
+
+    /// <summary>Idempotent: en allerede slettet besked giver intet nyt event.</summary>
+    public async Task DeleteAsync(Guid chatId, Guid requestedByUserId, Guid messageId, CancellationToken cancellationToken = default)
+    {
+        var chat = await GetChatAsync(chatId, cancellationToken);
+        var message = await GetMessageInChatAsync(chat.Id, messageId, cancellationToken);
+
+        if (!message.Delete(chat, requestedByUserId, time.GetUtcNowInMicroseconds()))
+            return;
+
+        // False betyder, at en samtidig request nåede at slette først - den har publiceret eventet.
+        if (!await messages.UpdateAsync(message, cancellationToken))
+            return;
+
+        logger.Information("Message deleted.", new { ChatId = chat.Id, MessageId = message.Id });
+
+        await messageClient.TryPublishAsync(new MessageDeleted(
+            message.Id, chat.Id, message.DeletedAt!.Value, Recipients(chat, message.SenderUserId)), logger);
     }
 
     public async Task<IReadOnlyList<Message>> GetPageAsync(
@@ -83,6 +118,12 @@ public sealed class MessageAppService(
 
         return await receipts.GetForMessageAsync(message.Id, cancellationToken);
     }
+
+    private static List<Guid> Recipients(Chat chat, Guid senderUserId) =>
+        chat.Participants
+            .Where(p => p.IsActive && p.UserId != senderUserId)
+            .Select(p => p.UserId)
+            .ToList();
 
     private async Task<Chat> GetChatAsync(Guid chatId, CancellationToken cancellationToken) =>
         await chats.GetAsync(chatId, cancellationToken)

@@ -63,6 +63,20 @@ internal sealed class InMemoryMessageRepository : IMessageRepository
         return Task.CompletedTask;
     }
 
+    public List<Message> Updated { get; } = [];
+
+    /// <summary>Simulerer en samtidig sletning: UpdateAsync gemmer intet og returnerer false.</summary>
+    public bool LoseUpdateRace { get; set; }
+
+    public Task<bool> UpdateAsync(Message message, CancellationToken cancellationToken = default)
+    {
+        if (LoseUpdateRace)
+            return Task.FromResult(false);
+
+        Updated.Add(message);
+        return Task.FromResult(true);
+    }
+
     public Task<IReadOnlyList<Message>> GetPageAsync(Guid chatId, Message? before, int limit, CancellationToken cancellationToken = default)
     {
         LastPageLimit = limit;

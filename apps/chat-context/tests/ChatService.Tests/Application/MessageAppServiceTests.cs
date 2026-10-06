@@ -176,6 +176,86 @@ public class MessageAppServiceTests
             _service.GetReceiptsAsync(_chat.Id, Guid.NewGuid(), message.Id));
     }
 
+    [Fact]
+    public async Task Edit_BySender_SavesAndPublishesMessageEdited()
+    {
+        var message = await _service.SendAsync(_chat.Id, _alice, "Hej");
+        _messageClient.Published.Clear();
+
+        var edited = await _service.EditAsync(_chat.Id, _alice, message.Id, "Hej igen");
+
+        Assert.Same(edited, Assert.Single(_messages.Updated));
+        var published = Assert.IsType<MessageEdited>(Assert.Single(_messageClient.Published));
+        Assert.Equal(message.Id, published.MessageId);
+        Assert.Equal("Hej igen", published.Content);
+        Assert.Equal(Now, published.EditedAt);
+        Assert.Equal([_bob], published.RecipientUserIds);
+    }
+
+    [Fact]
+    public async Task Edit_ByOtherParticipant_ThrowsNotAllowedAndSavesNothing()
+    {
+        var message = await _service.SendAsync(_chat.Id, _alice, "Hej");
+
+        await Assert.ThrowsAsync<NotAllowedException>(() => _service.EditAsync(_chat.Id, _bob, message.Id, "Hacket"));
+        Assert.Empty(_messages.Updated);
+    }
+
+    [Fact]
+    public async Task Edit_MessageFromOtherChat_ThrowsNotFound()
+    {
+        var otherMessage = await SendInOtherChatAsync();
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _service.EditAsync(_chat.Id, _alice, otherMessage.Id, "Hej"));
+    }
+
+    [Fact]
+    public async Task Edit_WhenDeletedConcurrently_ThrowsConflictAndPublishesNothing()
+    {
+        var message = await _service.SendAsync(_chat.Id, _alice, "Hej");
+        _messageClient.Published.Clear();
+        _messages.LoseUpdateRace = true;
+
+        await Assert.ThrowsAsync<ConflictException>(() => _service.EditAsync(_chat.Id, _alice, message.Id, "Hej igen"));
+        Assert.Empty(_messageClient.Published);
+    }
+
+    [Fact]
+    public async Task Delete_BySender_SavesAndPublishesMessageDeleted()
+    {
+        var message = await _service.SendAsync(_chat.Id, _alice, "Hej");
+        _messageClient.Published.Clear();
+
+        await _service.DeleteAsync(_chat.Id, _alice, message.Id);
+
+        Assert.True(Assert.Single(_messages.Updated).IsDeleted);
+        var published = Assert.IsType<MessageDeleted>(Assert.Single(_messageClient.Published));
+        Assert.Equal(new MessageDeleted(message.Id, _chat.Id, Now, published.RecipientUserIds), published);
+        Assert.Equal([_bob], published.RecipientUserIds);
+    }
+
+    [Fact]
+    public async Task Delete_Twice_PublishesOnlyOnce()
+    {
+        var message = await _service.SendAsync(_chat.Id, _alice, "Hej");
+        _messageClient.Published.Clear();
+
+        await _service.DeleteAsync(_chat.Id, _alice, message.Id);
+        await _service.DeleteAsync(_chat.Id, _alice, message.Id);
+
+        Assert.Single(_messages.Updated);
+        Assert.IsType<MessageDeleted>(Assert.Single(_messageClient.Published));
+    }
+
+    [Fact]
+    public async Task Delete_ByOtherParticipant_ThrowsNotAllowed()
+    {
+        var message = await _service.SendAsync(_chat.Id, _alice, "Hej");
+
+        await Assert.ThrowsAsync<NotAllowedException>(() => _service.DeleteAsync(_chat.Id, _bob, message.Id));
+        Assert.Empty(_messages.Updated);
+    }
+
     private async Task<Message> SendInOtherChatAsync()
     {
         var other = Chat.CreateDirect(_alice, Guid.NewGuid(), Now);

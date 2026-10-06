@@ -23,8 +23,10 @@ internal static class ContractMappings
         message.Id,
         message.ChatId,
         message.SenderUserId,
-        message.Content.Value,
-        message.SentAt);
+        message.Content?.Value,
+        message.SentAt,
+        message.EditedAt,
+        message.DeletedAt);
 
     public static ReceiptResponse ToResponse(this MessageReceipt receipt) => new(
         receipt.UserId,
