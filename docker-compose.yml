@@ -27,7 +27,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./apps/chat-context/chatDB/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./apps/chat-microservice/chatDB/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d chatDB"]
       interval: 2s
