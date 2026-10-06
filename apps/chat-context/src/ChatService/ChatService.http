@@ -1,9 +1,9 @@
-### ChatService - manuel afprøvning (kør servicen med: dotnet run --project src/ChatService)
+### ChatService - manual testing (run the service with: dotnet run --project src/ChatService)
 @host = http://localhost:5031
 @alice = 11111111-1111-1111-1111-111111111111
 @bob = 22222222-2222-2222-2222-222222222222
 
-### Opret gruppe (Alice bliver Owner)
+### Create group (Alice becomes Owner)
 # @name createGroup
 POST {{host}}/chats/group
 X-User-Id: {{alice}}
@@ -14,14 +14,14 @@ Content-Type: application/json
 ###
 @chatId = {{createGroup.response.body.$.id}}
 
-### Tilføj Bob
+### Add Bob
 POST {{host}}/chats/{{chatId}}/participants
 X-User-Id: {{alice}}
 Content-Type: application/json
 
 { "userId": "{{bob}}" }
 
-### Bob sender en besked
+### Bob sends a message
 # @name send
 POST {{host}}/chats/{{chatId}}/messages
 X-User-Id: {{bob}}
@@ -32,19 +32,19 @@ Content-Type: application/json
 ###
 @messageId = {{send.response.body.$.id}}
 
-### Alice henter beskeder (nyeste først)
+### Alice fetches messages (newest first)
 GET {{host}}/chats/{{chatId}}/messages?limit=20
 X-User-Id: {{alice}}
 
-### Alice markerer til og med beskeden som set
+### Alice marks up to and including the message as seen
 POST {{host}}/chats/{{chatId}}/messages/{{messageId}}/seen
 X-User-Id: {{alice}}
 
-### Bob ser receipts
+### Bob views receipts
 GET {{host}}/chats/{{chatId}}/messages/{{messageId}}/receipts
 X-User-Id: {{bob}}
 
-### Direct-chat (idempotent: 201 første gang, derefter 200)
+### Direct chat (idempotent: 201 the first time, then 200)
 POST {{host}}/chats/direct
 X-User-Id: {{alice}}
 Content-Type: application/json
