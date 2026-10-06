@@ -22,9 +22,9 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram)" {
                 channelDb = container "ChannelDB" "Contains channel information: name, users, server, channel, message." "RDBMS" "Database"
             }
 
-            group "Message" {
-                messageService = container "Message Service" "Handles direct and group chats: participants, messages and read receipts." "ASP .NET Core Web API" "Service"
-                messageDb = container "MessageDB" "Contains chats, participants, messages and message receipts." "PostgreSQL" "Database"
+            group "Chat" {
+                chatService = container "ChatService" "Handles direct and group chats: participants, messages and read receipts." "ASP.NET Core Web API" "Service"
+                chatDb = container "ChatDB" "Contains chats, participants, messages and message receipts." "PostgreSQL" "Database"
             }
 
             group "Engagement" {
@@ -62,7 +62,7 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram)" {
 
         client -> userService "manages User"
         client -> channelService "Interacts with"
-        client -> messageService "Communicates with"
+        client -> chatService "REST (X-User-Id header)"
         client -> engagementService "Interacts with"
 
         userService -> userAuthService "Validate"
@@ -70,16 +70,16 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram)" {
         userAuthService -> authDb "Read/Write"
         userService -> userDb "Read/Write"
         channelService -> channelDb "Read/Write"
-        messageService -> messageDb "Read/Write"
+        chatService -> chatDb "Read/Write"
         engagementService -> engagementDb "Read/Write"
 
         // RabbitMQ is used more broadly than notifications - services publish events to the broker,
         // and Real-Time Communication Service is one of (potentially several) consumers that subscribe.
         channelService -> rabbitMq "Publish: update"
-        messageService -> rabbitMq "Publish: message"
+        chatService -> rabbitMq "Publish: chat.message-sent, chat.message-edited, chat.message-deleted, chat.participant-added, chat.messages-seen"
         engagementService -> rabbitMq "Publish: engagement"
-        realTimeCommunicationService -> rabbitMq "Subscribe: chat.*, Publish: rtc.message-delivered"
-        messageService -> rabbitMq "Subscribe: rtc.message-delivered (sets deliveredAt)"
+        realTimeCommunicationService -> rabbitMq "Subscribe: chat.message-sent, chat.participant-added, chat.messages-seen; Publish: rtc.message-delivered"
+        chatService -> rabbitMq "Subscribe: rtc.message-delivered (sets deliveredAt)"
 
         client -> realTimeCommunicationService "Connects (SignalR, /hubs/chat)"
         realTimeCommunicationService -> client "Push notification"

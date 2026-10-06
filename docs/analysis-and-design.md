@@ -7,7 +7,9 @@ Bizcord is a Discord-like chat platform split into bounded contexts (map below).
 - **ChatService** (Chat context) – direct and group chats, messages and read receipts.
 - **Real-Time Communication (RTC)** – pushes new messages to users who are online.
 
-The other contexts (User, UserAuth, Channel, Engagement) are not implemented here; we only reference users by `userId`. "NotificationHub" on the map is RabbitMQ in the implementation.
+The other contexts (User, UserAuth, Channel, Engagement) are not implemented here; we only reference users by `userId`. "NotificationHub" on the map is RabbitMQ in the implementation. "Chat Context" on the map is ChatService in the code and the C4 model, in the folder `apps/chat-microservice`.
+
+C4 model (containers and RTC components): [`workspace.dsl`](../C4%20diagram/docs/workspace.dsl)
 
 ![Bizcord context map](bizcord-context-map.png)
 
@@ -23,6 +25,10 @@ The other contexts (User, UserAuth, Channel, Engagement) are not implemented her
 - **Who may receive a message:** ChatService decides. `chat.message-sent` carries `recipientUserIds` (active participants minus the sender), and RTC pushes only to those who are online among them. RTC never calls ChatService and has no access rules of its own.
 - **Chat ↔ Channel:** Channels have their own server and role permissions. Keeping channel messages out of ChatService keeps those rules in the Channel context.
 - **Chat ↔ User:** Users are referenced by `userId` only. Identity is trusted from a header (MVP – see section 5).
+
+**Two kinds of chat:**
+- **Direct:** exactly two users, both `Member`, no title and no new participants. Creating one is idempotent – asking for the same pair again returns the existing chat.
+- **Group:** has a title. The creator becomes `Owner`, and only `Owner`/`Admin` can add participants.
 
 Domain rules (who may send, add participants, etc.): [chatservice-domain.md](../apps/chat-microservice/docs/chatservice-domain.md)
 
@@ -83,6 +89,8 @@ If Bob is offline, there is no push and no `delivered_at`. He fetches the messag
 | `chat.message-sent` | ChatService | RTC | Push the message to online recipients |
 | `chat.participant-added` | ChatService | RTC | Logged only (for now) |
 | `chat.messages-seen` | ChatService | RTC | Logged only (for now) |
+| `chat.message-edited` | ChatService | – | No consumer yet |
+| `chat.message-deleted` | ChatService | – | No consumer yet |
 | `rtc.message-delivered` | RTC | ChatService | Set `delivered_at` on receipts |
 
 **Contracts:** Events use logical names, never C# type names, and the services share no code. Each consumer has its own record with only the fields it reads and ignores the rest (tolerant reader). Contract tests on both sides catch breaking changes.
@@ -105,15 +113,13 @@ Full contracts: [ChatService](../apps/chat-microservice/docs/contracts.md) · [R
 | "Delivered" means pushed to a connection, not acknowledged by the client | No client ack yet | A connection that dies at the same moment can produce a false "delivered" |
 | Presence is in memory | Simplest possible | Lost on restart, and RTC can't run more than one instance without a SignalR backplane |
 | `chat.participant-added` and `chat.messages-seen` are only logged by RTC | Published now so future consumers (e.g. live "seen" updates) need no change in ChatService | Events without a real consumer yet |
-| No PUT/DELETE yet (edit message, leave chat, rename group) | MVP focused on the send/deliver/seen flow | `left_at` exists in the domain but can't be set via the API |
-| ChatService's consumer uses EasyNetQ `IBus` directly instead of `IMessageClient` | Needed the subscription handle for clean shutdown | Swapping broker touches two classes, and the trace breaks on the RTC → ChatService hop. *Being fixed.* |
+| No leave chat or rename group yet (edit and delete message are implemented) | MVP focused on the send/deliver/seen flow | `left_at` exists in the domain but can't be set via the API |
+| Postgres + Dapper with hand-written SQL migrations, not EF Core | Queries and migrations are plain SQL under version control, and we practise what we learned in Databases for Developers: hand-written SQL and a migration strategy | More SQL and mapping code to maintain than with EF Core |
 
-> **TODO – decide before the meeting (delete this box when done):**
-> 1. **participant-added / messages-seen row:** Is the "Why" our actual reason? If there was no plan, write it honestly (e.g. "published for future use"). - still unresolved (skip this please)
-> 2. **IBus row:** Delete it if the week 37 fix is merged before the meeting; otherwise keep "Being fixed". - fixed (please checck)
-> 3. **PUT/DELETE row:** Update it if the week 38 fixes are merged before the meeting. - fixed (please check)
-> 4. **Postgres + Dapper:** Not in the table. Add a row if we have a reason – expect "why not EF Core?". - Dapper because we can easier version control our migrations and queries, and we want to use our knowledge from databases for Developers (another course) and Development of Large Systems across the three courses, to reinforce our learning by doing it.
-> 5. **Length:** 10 rows is a lot for a 20-minute meeting. Candidates to cut: "Presence is in memory" and "Delivered means pushed". - table is fine.
+> **TODO – decide at the group meeting on Thursday (delete this box when done):**
+> 1. **participant-added / messages-seen row:** Is the "Why" our actual reason? If there was no plan, write it honestly (e.g. "published for future use").
+> 2. **Context map – Chat Service:** It says "Handles Personal- and channel-based chat", which contradicts section 2 (channel messages belong to Channel Service). Change it to e.g. "Handles direct and group chats" in Canva.
+> 3. **Context map – `rtc.message-delivered`:** Realtime Communication only has "Subscribes to events". Add an arrow showing that RTC also publishes to NotificationHub ("Publish: message delivered").
 
 ## 6. Getting started
 
@@ -140,15 +146,3 @@ Don't run the compose files under `apps/` at the same time – they use the same
 3. [`Chat.cs`](../apps/chat-microservice/src/ChatService/Domain/Chat.cs) – the domain rules (who may send, add participants)
 4. [`MessageSentHandler.cs`](../apps/real-time-communication-microservice/src/RealTimeCommunicationServer/Messaging/Handlers/MessageSentHandler.cs) – RTC pushes to online recipients and publishes `rtc.message-delivered`
 5. [`MessageDeliveredConsumer.cs`](../apps/chat-microservice/src/ChatService/Infrastructure/Messaging/MessageDeliveredConsumer.cs) – ChatService sets `delivered_at`
-
----
-
-> **TODO – open questions for the whole document (discuss together, delete this box when done):**
-
-> 2. **Naming:** "Chat Context" (map), ChatService (code and C4), `chat-microservice` (folder). Align them or explain in one line in section 1. - please align them
-> 3. **`ChatService.http`** uses port 5031 (`dotnet run`); Docker uses 8000. Fix `@host` or note it in section 6. - please fix it.
-> 4. **Section 5 TODO box:** the five points there.
-> 5. **Task 1 coverage:** The domain part is short and links to `chatservice-domain.md`. Enough, or add 2-3 lines on direct vs group chats?
-
-> 7. **C4 model (`workspace.dsl`):** Still up to date? Link it, or is that one diagram too many? 
-> 8. **The other group's background:** Do they already know the Bizcord assignment? If so, section 1 can be cut to two lines. - yes, our assignments are alike, but our implementation differs
