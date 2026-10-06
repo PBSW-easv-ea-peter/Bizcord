@@ -10,13 +10,13 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 # Kun csproj-filer først, så restore-laget caches, indtil afhængighederne ændres.
-COPY ["apps/chat-context/src/ChatService/ChatService.csproj", "apps/chat-context/src/ChatService/"]
+COPY ["apps/chat-microservice/src/ChatService/ChatService.csproj", "apps/chat-microservice/src/ChatService/"]
 COPY ["libs/Bizcord.Logging/Bizcord.Logging.csproj", "libs/Bizcord.Logging/"]
-RUN dotnet restore "apps/chat-context/src/ChatService/ChatService.csproj"
+RUN dotnet restore "apps/chat-microservice/src/ChatService/ChatService.csproj"
 
-COPY ["apps/chat-context/src/ChatService/", "apps/chat-context/src/ChatService/"]
+COPY ["apps/chat-microservice/src/ChatService/", "apps/chat-microservice/src/ChatService/"]
 COPY ["libs/Bizcord.Logging/", "libs/Bizcord.Logging/"]
-WORKDIR "/src/apps/chat-context/src/ChatService"
+WORKDIR "/src/apps/chat-microservice/src/ChatService"
 RUN dotnet build "ChatService.csproj" -c $BUILD_CONFIGURATION -o /app/build --no-restore
 
 FROM build AS publish

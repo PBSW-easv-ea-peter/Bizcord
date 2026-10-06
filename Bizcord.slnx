@@ -1,10 +1,10 @@
 <Solution>
   <Folder Name="/apps/" />
-  <Folder Name="/apps/chat-context/" />
-  <Folder Name="/apps/chat-context/src/">
-    <Project Path="apps/chat-context/src/ChatService/ChatService.csproj" />
+  <Folder Name="/apps/chat-microservice/" />
+  <Folder Name="/apps/chat-microservice/src/">
+    <Project Path="apps/chat-microservice/src/ChatService/ChatService.csproj" />
   </Folder>
-  <Folder Name="/apps/chat-context/tests/">
+  <Folder Name="/apps/chat-microservice/tests/">
     <Project Path="apps/chat-context/tests/ChatService.Tests/ChatService.Tests.csproj" />
   </Folder>
   <Folder Name="/apps/real-time-communication-microservice/" />
