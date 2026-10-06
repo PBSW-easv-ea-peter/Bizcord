@@ -8,7 +8,7 @@ namespace RealTimeCommunicationServer.Tests;
 
 /// <summary>
 /// Consumer contract: what RTC needs from 'chat.message-sent'. Input is JSON as it appears on
-/// RabbitMQ (apps/chat-context/docs/contracts.md) - not a C# object - so the test also catches
+/// RabbitMQ (apps/chat-microservice/docs/contracts.md) - not a C# object - so the test also catches
 /// naming and format errors, not just missing fields. An unknown field is included to prove tolerant reader.
 /// </summary>
 public class MessageSentConsumerContractTests

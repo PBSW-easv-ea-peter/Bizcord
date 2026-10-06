@@ -1,7 +1,7 @@
 # Real-Time Communication Service – contract with the outside world
 
 This is what clients and other services can rely on. Everything else (classes, presence implementation) is RTC's own business.
-The conventions are the same as ChatService's (camelCase JSON, UUID strings, ISO 8601 in UTC) – see [`apps/chat-context/docs/contracts.md`](../../chat-context/docs/contracts.md).
+The conventions are the same as ChatService's (camelCase JSON, UUID strings, ISO 8601 in UTC) – see [`apps/chat-microservice/docs/contracts.md`](../../chat-microservice/docs/contracts.md).
 
 ## SignalR hub (clients)
 | Topic | Rule |

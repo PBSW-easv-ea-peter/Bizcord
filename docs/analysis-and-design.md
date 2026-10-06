@@ -15,7 +15,7 @@ The other contexts (User, UserAuth, Channel, Engagement) are not implemented her
 
 | Service | Responsible for | NOT responsible for | Code |
 | --- | --- | --- | --- |
-| ChatService | Direct and group chats: participants, messages and receipts (delivered/seen). Source of truth via REST. | Channel messages (Channel Service), users and authentication, pushing to clients | [`apps/chat-context`](../apps/chat-context) |
+| ChatService | Direct and group chats: participants, messages and receipts (delivered/seen). Source of truth via REST. | Channel messages (Channel Service), users and authentication, pushing to clients | [`apps/chat-microservice`](../apps/chat-microservice) |
 | RTC | Pushing new messages to online users (SignalR), tracking who is online, reporting what was delivered | Storing anything, receiving messages from clients (the hub is server → client only), deciding who may read a chat | [`apps/real-time-communication-microservice`](../apps/real-time-communication-microservice) |
 
 **Why the boundaries are here:**
@@ -24,7 +24,7 @@ The other contexts (User, UserAuth, Channel, Engagement) are not implemented her
 - **Chat ↔ Channel:** Channels have their own server and role permissions. Keeping channel messages out of ChatService keeps those rules in the Channel context.
 - **Chat ↔ User:** Users are referenced by `userId` only. Identity is trusted from a header (MVP – see section 5).
 
-Domain rules (who may send, add participants, etc.): [chatservice-domain.md](../apps/chat-context/docs/chatservice-domain.md)
+Domain rules (who may send, add participants, etc.): [chatservice-domain.md](../apps/chat-microservice/docs/chatservice-domain.md)
 
 ## 3. Data ownership
 
@@ -89,7 +89,7 @@ If Bob is offline, there is no push and no `delivered_at`. He fetches the messag
 
 **Guarantees:** At-most-once delivery, and events are published only after the change is saved. REST is the source of truth – a lost event costs a push or a `delivered_at`, never a message.
 
-Full contracts: [ChatService](../apps/chat-context/docs/contracts.md) · [RTC](../apps/real-time-communication-microservice/docs/contracts.md)
+Full contracts: [ChatService](../apps/chat-microservice/docs/contracts.md) · [RTC](../apps/real-time-communication-microservice/docs/contracts.md)
 
 ## 5. Decisions and known limitations
 
@@ -127,23 +127,23 @@ dotnet test Bizcord.slnx       # Postgres and RabbitMQ are started by Testcontai
 | ChatService API (Swagger) | http://localhost:8000/swagger |
 | RTC (SignalR hub) | http://localhost:8080/hubs/chat?userId={uuid} |
 | RabbitMQ management | http://localhost:15672 (guest/guest) |
-| Manual requests | [`ChatService.http`](../apps/chat-context/src/ChatService/ChatService.http) |
+| Manual requests | [`ChatService.http`](../apps/chat-microservice/src/ChatService/ChatService.http) |
 
 Don't run the compose files under `apps/` at the same time – they use the same ports.
 
 **Where to start reading** – follow one message through the system:
 
-1. [`MessagesController.cs`](../apps/chat-context/src/ChatService/Controllers/MessagesController.cs) – REST entry point
-2. [`MessageAppService.cs`](../apps/chat-context/src/ChatService/Application/MessageAppService.cs) – saves the message, then publishes `chat.message-sent`
-3. [`Chat.cs`](../apps/chat-context/src/ChatService/Domain/Chat.cs) – the domain rules (who may send, add participants)
+1. [`MessagesController.cs`](../apps/chat-microservice/src/ChatService/Controllers/MessagesController.cs) – REST entry point
+2. [`MessageAppService.cs`](../apps/chat-microservice/src/ChatService/Application/MessageAppService.cs) – saves the message, then publishes `chat.message-sent`
+3. [`Chat.cs`](../apps/chat-microservice/src/ChatService/Domain/Chat.cs) – the domain rules (who may send, add participants)
 4. [`MessageSentHandler.cs`](../apps/real-time-communication-microservice/src/RealTimeCommunicationServer/Messaging/Handlers/MessageSentHandler.cs) – RTC pushes to online recipients and publishes `rtc.message-delivered`
-5. [`MessageDeliveredConsumer.cs`](../apps/chat-context/src/ChatService/Infrastructure/Messaging/MessageDeliveredConsumer.cs) – ChatService sets `delivered_at`
+5. [`MessageDeliveredConsumer.cs`](../apps/chat-microservice/src/ChatService/Infrastructure/Messaging/MessageDeliveredConsumer.cs) – ChatService sets `delivered_at`
 
 ---
 
 > **TODO – open questions for the whole document (discuss together, delete this box when done):**
 > 1. **Context map errors – fix in Canva before the meeting?** ChatDB says "engagement information", "Chanel" typo, Chat Service labelled "channel-based chat" (contradicts section 2), POSTMessage/ReadMessage fields don't match the contracts, the `rtc.message-delivered` arrow is missing.
-> 2. **Naming:** "Chat Context" (map), "Message Service" (C4), ChatService (code), `chat-context` (folder). Align them or explain in one line in section 1.
+> 2. **Naming:** "Chat Context" (map), "Message Service" (C4), ChatService (code), `chat-microservice` (folder). Align them or explain in one line in section 1.
 > 3. **`ChatService.http`** uses port 5031 (`dotnet run`); Docker uses 8000. Fix `@host` or note it in section 6.
 > 4. **Section 5 TODO box:** the five points there.
 > 5. **Task 1 coverage:** The domain part is short and links to `chatservice-domain.md`. Enough, or add 2-3 lines on direct vs group chats?

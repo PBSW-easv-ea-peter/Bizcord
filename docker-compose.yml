@@ -15,8 +15,8 @@ services:
       interval: 2s
       timeout: 3s
       retries: 30
-    # Username: user
-    # Password: user
+    # Username: guest
+    # Password: guest
 
   postgres:
     image: postgres:17-alpine
@@ -27,7 +27,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./apps/chat-context/chatDB/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./apps/chat-microservice/chatDB/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d chatDB"]
       interval: 2s
@@ -37,7 +37,7 @@ services:
   chatservice:
     build:
       context: .
-      dockerfile: apps/chat-context/Dockerfile
+      dockerfile: apps/chat-microservice/Dockerfile
     ports:
       - "8000:8080"
     environment:

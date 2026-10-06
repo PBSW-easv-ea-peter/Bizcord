@@ -1,0 +1,22 @@
+- What is MessageService responsible for?
+    - Storing chats and messages
+    - Keeping track of participants
+    - Keeping track of sent/delivered/seen
+    - Publishing events to e.g. RealTimeCommunicationService
+- Which data does it own?
+    - Chat
+    - Message
+    - ChatParticipant
+    - Possibly MessageReceipt (who has seen the message)
+- Which operations should others be able to ask it to perform?
+    - MVP: Create chat, add participant, send message, get messages, edit/delete message (PUT/DELETE), mark as seen
+    - Later: remove participant, update/delete chat, list my chats (GET /chats)
+- Which information/events should it pass on when something relevant has happened?
+    - ParticipantAdded
+    - MessageSent
+    - MessageEdited / MessageDeleted
+    - MessageSeen
+    - Possibly MessageDelivered
+- Which information does it need from other services?
+    - UserId
+    - Possibly validation that the user exists
