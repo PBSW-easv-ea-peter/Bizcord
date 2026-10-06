@@ -12,7 +12,8 @@ src/ChatService/         ASP.NET Core Web API
   Application/           Use cases + repository-interfaces
   Infrastructure/        Dapper-repositories, messaging
   Controllers/           REST-endpoints
-  Contracts/             DTO'er og events, der deles med andre services
+  Contracts/             ChatService' egne DTO'er og events, der serialiserer kontrakten. Deles IKKE som kode;
+                         den delte model er docs/contracts.md (se "Vores svar på uge 38, Task 02" der)
 tests/ChatService.Tests/ xUnit
 ```
 

@@ -15,6 +15,8 @@ public sealed class EventTypeNames : ITypeNameSerializer
         [typeof(MessageSent)] = EventNames.MessageSent,
         [typeof(ParticipantAdded)] = EventNames.ParticipantAdded,
         [typeof(MessagesSeen)] = EventNames.MessagesSeen,
+        [typeof(MessageEdited)] = EventNames.MessageEdited,
+        [typeof(MessageDeleted)] = EventNames.MessageDeleted,
         [typeof(MessageDelivered)] = EventNames.MessageDelivered
     });
 

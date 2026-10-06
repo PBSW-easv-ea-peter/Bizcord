@@ -7,6 +7,8 @@ internal static class DbTime
 {
     public static DateTimeOffset ToDb(DateTimeOffset value) => value.ToUniversalTime();
 
+    public static DateTimeOffset? ToDb(DateTimeOffset? value) => value?.ToUniversalTime();
+
     public static DateTimeOffset FromDb(DateTime value) =>
         new(DateTime.SpecifyKind(value, DateTimeKind.Utc));
 

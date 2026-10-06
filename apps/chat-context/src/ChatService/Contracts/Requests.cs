@@ -11,3 +11,5 @@ public sealed record CreateGroupChatRequest(string Title);
 public sealed record AddParticipantRequest([Required] Guid? UserId);
 
 public sealed record SendMessageRequest(string Content);
+
+public sealed record EditMessageRequest(string Content);

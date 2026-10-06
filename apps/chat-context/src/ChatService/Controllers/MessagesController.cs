@@ -36,6 +36,34 @@ public sealed class MessagesController(MessageAppService messages) : ControllerB
         return Ok(page.Select(m => m.ToResponse()).ToList());
     }
 
+    /// <summary>Kun afsenderen. Erstatter indholdet og sætter editedAt.</summary>
+    [HttpPut("{messageId:guid}")]
+    public async Task<ActionResult<MessageResponse>> Edit(
+        [FromHeader(Name = UserHeader.Name), BindRequired] Guid userId,
+        Guid chatId,
+        Guid messageId,
+        EditMessageRequest request,
+        CancellationToken cancellationToken)
+    {
+        var message = await messages.EditAsync(chatId, userId, messageId, request.Content, cancellationToken);
+
+        return Ok(message.ToResponse());
+    }
+
+    /// <summary>Kun afsenderen. Blød sletning - beskeden bliver i historikken uden indhold. Idempotent.</summary>
+    [HttpDelete("{messageId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(
+        [FromHeader(Name = UserHeader.Name), BindRequired] Guid userId,
+        Guid chatId,
+        Guid messageId,
+        CancellationToken cancellationToken)
+    {
+        await messages.DeleteAsync(chatId, userId, messageId, cancellationToken);
+
+        return NoContent();
+    }
+
     /// <summary>Markerer alle andres beskeder til og med denne som set. Idempotent.</summary>
     [HttpPost("{messageId:guid}/seen")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
