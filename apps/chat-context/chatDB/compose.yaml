@@ -14,3 +14,19 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
+
+  # Dummy-data - kun på forespørgsel: docker compose -f chatDB/compose.yaml --profile seed up seed
+  seed:
+    image: postgres:17-alpine
+    profiles: [seed]
+    environment:
+      PGPASSWORD: admin
+    volumes:
+      - ./postgres/seed:/seed:ro
+    # pg_isready kan melde klar, mens init-scripts stadig kører (kun via socket) - vent på TCP.
+    command: >
+      sh -c "until psql -h postgres -U admin -d chatDB -c 'select 1' >/dev/null 2>&1; do sleep 1; done
+      && psql -h postgres -U admin -d chatDB -v ON_ERROR_STOP=1 -f /seed/seed.sql"
+    depends_on:
+      postgres:
+        condition: service_healthy

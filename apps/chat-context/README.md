@@ -25,6 +25,13 @@ dotnet run --project src/ChatService
 ```
 Swagger: http://chatservice.dev.localhost:5031/swagger · Health: `/health`
 
+### Testdata (valgfrit)
+```
+docker compose -f chatDB/compose.yaml --profile seed up seed
+```
+Fra repo-roden: `docker compose --profile seed up seed`. Scriptet `chatDB/postgres/seed/seed.sql` indsætter 4 brugere, 4 chats og 10 beskeder (inkl. en redigeret, en slettet og receipts) og kan køres flere gange.
+Brugernes id'er og chat-id'erne står øverst i filen, fx Alice `11111111-1111-1111-1111-111111111111` som `X-User-Id`. Seed-data bruges ikke af testene.
+
 ## Test
 ```
 dotnet test tests/ChatService.Tests
