@@ -87,6 +87,8 @@ If Bob is offline, there is no push and no `delivered_at`. He fetches the messag
 
 **Contracts:** Events use logical names, never C# type names, and the services share no code. Each consumer has its own record with only the fields it reads and ignores the rest (tolerant reader). Contract tests on both sides catch breaking changes.
 
+**Shared model:** The shared model is the contract document itself (JSON shapes and event names), not a shared C# project or NuGet package. A shared assembly would tie every service to the same language, .NET version and release cycle. It exposes only what other services need and hides internals such as participant ids and table structure. See [ChatService contracts](../apps/chat-microservice/docs/contracts.md).
+
 **Guarantees:** At-most-once delivery, and events are published only after the change is saved. REST is the source of truth – a lost event costs a push or a `delivered_at`, never a message.
 
 Full contracts: [ChatService](../apps/chat-microservice/docs/contracts.md) · [RTC](../apps/real-time-communication-microservice/docs/contracts.md)
@@ -107,11 +109,11 @@ Full contracts: [ChatService](../apps/chat-microservice/docs/contracts.md) · [R
 | ChatService's consumer uses EasyNetQ `IBus` directly instead of `IMessageClient` | Needed the subscription handle for clean shutdown | Swapping broker touches two classes, and the trace breaks on the RTC → ChatService hop. *Being fixed.* |
 
 > **TODO – decide before the meeting (delete this box when done):**
-> 1. **participant-added / messages-seen row:** Is the "Why" our actual reason? If there was no plan, write it honestly (e.g. "published for future use").
-> 2. **IBus row:** Delete it if the week 37 fix is merged before the meeting; otherwise keep "Being fixed".
-> 3. **PUT/DELETE row:** Update it if the week 38 fixes are merged before the meeting.
-> 4. **Postgres + Dapper:** Not in the table. Add a row if we have a reason – expect "why not EF Core?".
-> 5. **Length:** 10 rows is a lot for a 20-minute meeting. Candidates to cut: "Presence is in memory" and "Delivered means pushed".
+> 1. **participant-added / messages-seen row:** Is the "Why" our actual reason? If there was no plan, write it honestly (e.g. "published for future use"). - still unresolved (skip this please)
+> 2. **IBus row:** Delete it if the week 37 fix is merged before the meeting; otherwise keep "Being fixed". - fixed (please checck)
+> 3. **PUT/DELETE row:** Update it if the week 38 fixes are merged before the meeting. - fixed (please check)
+> 4. **Postgres + Dapper:** Not in the table. Add a row if we have a reason – expect "why not EF Core?". - Dapper because we can easier version control our migrations and queries, and we want to use our knowledge from databases for Developers (another course) and Development of Large Systems across the three courses, to reinforce our learning by doing it.
+> 5. **Length:** 10 rows is a lot for a 20-minute meeting. Candidates to cut: "Presence is in memory" and "Delivered means pushed". - table is fine.
 
 ## 6. Getting started
 
@@ -142,11 +144,11 @@ Don't run the compose files under `apps/` at the same time – they use the same
 ---
 
 > **TODO – open questions for the whole document (discuss together, delete this box when done):**
-> 1. **Context map errors – fix in Canva before the meeting?** ChatDB says "engagement information", "Chanel" typo, Chat Service labelled "channel-based chat" (contradicts section 2), POSTMessage/ReadMessage fields don't match the contracts, the `rtc.message-delivered` arrow is missing.
-> 2. **Naming:** "Chat Context" (map), "Message Service" (C4), ChatService (code), `chat-microservice` (folder). Align them or explain in one line in section 1.
-> 3. **`ChatService.http`** uses port 5031 (`dotnet run`); Docker uses 8000. Fix `@host` or note it in section 6.
+
+> 2. **Naming:** "Chat Context" (map), ChatService (code and C4), `chat-microservice` (folder). Align them or explain in one line in section 1. - please align them
+> 3. **`ChatService.http`** uses port 5031 (`dotnet run`); Docker uses 8000. Fix `@host` or note it in section 6. - please fix it.
 > 4. **Section 5 TODO box:** the five points there.
 > 5. **Task 1 coverage:** The domain part is short and links to `chatservice-domain.md`. Enough, or add 2-3 lines on direct vs group chats?
-> 6. **Root `README.md` is empty.** Link to this document so the other group finds it?
-> 7. **C4 model (`workspace.dsl`):** Still up to date? Link it, or is that one diagram too many?
-> 8. **The other group's background:** Do they already know the Bizcord assignment? If so, section 1 can be cut to two lines.
+
+> 7. **C4 model (`workspace.dsl`):** Still up to date? Link it, or is that one diagram too many? 
+> 8. **The other group's background:** Do they already know the Bizcord assignment? If so, section 1 can be cut to two lines. - yes, our assignments are alike, but our implementation differs
