@@ -15,8 +15,8 @@ services:
       interval: 2s
       timeout: 3s
       retries: 30
-    # Username: user
-    # Password: user
+    # Username: guest
+    # Password: guest
 
   postgres:
     image: postgres:17-alpine
