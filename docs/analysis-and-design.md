@@ -112,14 +112,9 @@ Full contracts: [ChatService](../apps/chat-microservice/docs/contracts.md) · [R
 | Identity trusted from `X-User-Id` / `?userId=` | Authentication is out of scope for the MVP | Anyone can impersonate a user; to be replaced by a validated token |
 | "Delivered" means pushed to a connection, not acknowledged by the client | No client ack yet | A connection that dies at the same moment can produce a false "delivered" |
 | Presence is in memory | Simplest possible | Lost on restart, and RTC can't run more than one instance without a SignalR backplane |
-| `chat.participant-added` and `chat.messages-seen` are only logged by RTC | Published now so future consumers (e.g. live "seen" updates) need no change in ChatService | Events without a real consumer yet |
+| `chat.participant-added` and `chat.messages-seen` are published but only logged by RTC | Bizcord is built by several (simulated) teams; ChatService publishes its domain events for other teams' consumers without knowing who they are (pub/sub) | No real consumer yet. `chat.messages-seen` has no recipients, so a consumer must either track membership from `chat.participant-added` or we add `recipientUserIds` (non-breaking) |
 | No leave chat or rename group yet (edit and delete message are implemented) | MVP focused on the send/deliver/seen flow | `left_at` exists in the domain but can't be set via the API |
 | Postgres + Dapper with hand-written SQL migrations, not EF Core | Queries and migrations are plain SQL under version control, and we practise what we learned in Databases for Developers: hand-written SQL and a migration strategy | More SQL and mapping code to maintain than with EF Core |
-
-> **TODO – decide at the group meeting on Thursday (delete this box when done):**
-> 1. **participant-added / messages-seen row:** Is the "Why" our actual reason? If there was no plan, write it honestly (e.g. "published for future use").
-> 2. **Context map – Chat Service:** It says "Handles Personal- and channel-based chat", which contradicts section 2 (channel messages belong to Channel Service). Change it to e.g. "Handles direct and group chats" in Canva.
-> 3. **Context map – `rtc.message-delivered`:** Realtime Communication only has "Subscribes to events". Add an arrow showing that RTC also publishes to NotificationHub ("Publish: message delivered").
 
 ## 6. Getting started
 
