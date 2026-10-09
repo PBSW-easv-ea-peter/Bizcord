@@ -9,7 +9,7 @@ Bizcord is a Discord-like chat platform split into bounded contexts (map below).
 
 The other contexts (User, UserAuth, Channel, Engagement) are not implemented here; we only reference users by `userId`. "NotificationHub" on the map is RabbitMQ in the implementation. "Chat Context" on the map is ChatService in the code and the C4 model, in the folder `apps/chat-microservice`.
 
-C4 model (containers and RTC components): [`workspace.dsl`](../C4%20diagram/docs/workspace.dsl)
+C4 model (containers, and components for ChatService and RTC): [`workspace.dsl`](../C4%20diagram/docs/workspace.dsl)
 
 ![Bizcord context map](bizcord-context-map.png)
 
