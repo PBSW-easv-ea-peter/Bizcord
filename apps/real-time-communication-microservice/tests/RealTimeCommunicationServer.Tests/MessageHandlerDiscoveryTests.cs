@@ -34,7 +34,7 @@ public class MessageHandlerDiscoveryTests
     [Fact]
     public void A_new_handler_class_is_registered_without_other_changes()
     {
-        // Scanner test-assembly'en, hvor TestMessageHandler blot er defineret - ingen registrering nogen steder.
+        // Scans the test assembly, where TestMessageHandler is merely defined - no registration anywhere.
         var provider = BuildProvider(typeof(TestMessageHandler).Assembly);
 
         Assert.Contains(typeof(TestMessage), provider.GetRequiredService<MessageHandlerRegistry>().MessageTypes);
@@ -56,7 +56,7 @@ public class MessageHandlerDiscoveryTests
 
         await client.DeliverAsync(new TestMessage("hello"));
 
-        // To handlers for samme type - begge kaldes, fra én subscription.
+        // Two handlers for the same type - both are called, from one subscription.
         Assert.Equal(["first:hello", "second:hello"], provider.GetRequiredService<Received>().Messages.Order());
         Assert.Single(client.Subscriptions, s => s.Type == typeof(TestMessage));
     }
@@ -65,7 +65,7 @@ public class MessageHandlerDiscoveryTests
         new ServiceCollection()
             .AddLogging()
             .AddSingleton<Received>()
-            // MessageSentHandler's afhængigheder
+            // MessageSentHandler's dependencies
             .AddSingleton<PresenceTracker>()
             .AddSingleton<IClientNotifier, FakeClientNotifier>()
             .AddSingleton<IMessageClient, FakeMessageClient>()
@@ -108,8 +108,8 @@ public class SecondTestMessageHandler : IMessageHandler<TestMessage>
 }
 
 /// <summary>
-/// Husker subscriptions og publicerede beskeder i stedet for at tale med RabbitMQ,
-/// så en besked kan afleveres direkte, og det publicerede kan verificeres.
+/// Records subscriptions and published messages instead of talking to RabbitMQ,
+/// so a message can be delivered directly and what was published can be verified.
 /// </summary>
 public class FakeMessageClient : IMessageClient
 {

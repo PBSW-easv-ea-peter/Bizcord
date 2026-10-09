@@ -1,4 +1,4 @@
-# Build-context er repo-roden (servicen refererer til libs/Bizcord.Logging):
+# Build context is the repo root (the service references libs/Bizcord.Logging):
 #   docker build -f apps/real-time-communication-microservice/Dockerfile .
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
@@ -9,7 +9,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Kun csproj-filer først, så restore-laget caches, indtil afhængighederne ændres.
+# Only the csproj files first, so the restore layer stays cached until the dependencies change.
 COPY ["apps/real-time-communication-microservice/src/RealTimeCommunicationServer/RealTimeCommunicationServer.csproj", "apps/real-time-communication-microservice/src/RealTimeCommunicationServer/"]
 COPY ["libs/Bizcord.Logging/Bizcord.Logging.csproj", "libs/Bizcord.Logging/"]
 RUN dotnet restore "apps/real-time-communication-microservice/src/RealTimeCommunicationServer/RealTimeCommunicationServer.csproj"

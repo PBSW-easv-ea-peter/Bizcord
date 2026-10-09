@@ -5,14 +5,14 @@ namespace ChatService.Application;
 public interface IReceiptRepository
 {
     /// <summary>
-    /// Markerer alle andres beskeder i chatten til og med <paramref name="upTo"/> som set af brugeren.
-    /// Allerede sete beskeder røres ikke. Returnerer antal nyligt markerede.
+    /// Marks all other users' messages in the chat up to and including <paramref name="upTo"/> as seen by the user.
+    /// Already seen messages are left untouched. Returns the number of newly marked.
     /// </summary>
     Task<int> MarkSeenUpToAsync(Guid userId, Message upTo, DateTimeOffset now, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Markerer beskeden som leveret til brugerne. Kun aktive deltagere i chatten tæller; afsenderen og
-    /// allerede leverede røres ikke, og en ukendt besked giver 0. Returnerer antal nyligt markerede.
+    /// Marks the message as delivered to the users. Only active participants in the chat count; the sender and
+    /// already delivered are left untouched, and an unknown message yields 0. Returns the number of newly marked.
     /// </summary>
     Task<int> MarkDeliveredAsync(Guid messageId, IReadOnlyCollection<Guid> userIds, DateTimeOffset at, CancellationToken cancellationToken = default);
 

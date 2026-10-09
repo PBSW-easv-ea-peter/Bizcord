@@ -2,7 +2,7 @@ using System.Reflection;
 
 namespace RealTimeCommunicationServer.Messaging;
 
-/// <summary>De beskedtyper, der har mindst én handler. HandleMessages abonnerer på præcis disse.</summary>
+/// <summary>The message types that have at least one handler. HandleMessages subscribes to exactly these.</summary>
 public class MessageHandlerRegistry
 {
     public MessageHandlerRegistry(
@@ -17,8 +17,8 @@ public class MessageHandlerRegistry
 public static class MessageHandlerRegistration
 {
     /// <summary>
-    /// Scanner assembly'en for konkrete klasser, der implementerer IMessageHandler&lt;T&gt;,
-    /// og registrerer dem som scoped (ét scope pr. besked, ligesom ét pr. HTTP-request).
+    /// Scans the assembly for concrete classes that implement IMessageHandler&lt;T&gt;,
+    /// and registers them as scoped (one scope per message, like one per HTTP request).
     /// </summary>
     public static IServiceCollection AddMessageHandlers(
         this IServiceCollection services,

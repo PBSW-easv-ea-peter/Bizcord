@@ -4,14 +4,14 @@ using ChatService.Domain;
 
 namespace ChatService.Application;
 
-/// <summary>Use cases for Chat-aggregatet. Orkestrerer - forretningsreglerne ligger i domænet.</summary>
+/// <summary>Use cases for the Chat aggregate. Orchestrates only - the business rules live in the domain.</summary>
 public sealed class ChatAppService(
     IChatRepository chats,
     IMessageClient messageClient,
     TimeProvider time,
     ILogger<ChatAppService> logger)
 {
-    /// <summary>Idempotent: findes der allerede en direct-chat mellem de to, returneres den.</summary>
+    /// <summary>Idempotent: if a direct chat between the two already exists, it is returned.</summary>
     public async Task<(Chat Chat, bool Created)> CreateDirectAsync(Guid userA, Guid userB, CancellationToken cancellationToken = default)
     {
         var existing = await chats.FindDirectAsync(userA, userB, cancellationToken);
@@ -27,7 +27,7 @@ public sealed class ChatAppService(
         }
         catch (ConflictException)
         {
-            // Tabte kapløbet mod en samtidig request - returnér vinderen.
+            // Lost the race against a concurrent request - return the winner.
             var winner = await chats.FindDirectAsync(userA, userB, cancellationToken);
             return winner is not null ? (winner, false) : throw new InvalidOperationException("Direct chat conflict without an existing chat.");
         }

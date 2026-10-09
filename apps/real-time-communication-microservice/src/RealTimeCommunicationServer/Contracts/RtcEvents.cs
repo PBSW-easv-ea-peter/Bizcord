@@ -1,10 +1,10 @@
 namespace RealTimeCommunicationServer.Contracts;
 
-// RTC's egne kontrakter mod omverdenen. Se docs/contracts.md.
+// RTC's own contracts towards the outside world. See docs/contracts.md.
 
 /// <summary>
-/// Publiceres som 'rtc.message-delivered', når beskeden er pushet til mindst én forbundet modtager.
-/// Kun dem, der faktisk fik den - offline modtagere er ikke med.
+/// Published as 'rtc.message-delivered' when the message has been pushed to at least one connected recipient.
+/// Only those who actually received it - offline recipients are not included.
 /// </summary>
 public record MessageDelivered(
     Guid MessageId,
@@ -12,7 +12,7 @@ public record MessageDelivered(
     IReadOnlyList<Guid> DeliveredToUserIds,
     DateTimeOffset DeliveredAt);
 
-/// <summary>Pushes til klienten via SignalR som 'MessageReceived'.</summary>
+/// <summary>Pushed to the client via SignalR as 'MessageReceived'.</summary>
 public record MessageReceived(
     Guid MessageId,
     Guid ChatId,

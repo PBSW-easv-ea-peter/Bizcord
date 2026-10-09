@@ -7,7 +7,7 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Logging: skabelon-JSON til stdout (libs/Bizcord.Logging)
+// Logging: template JSON to stdout (libs/Bizcord.Logging)
 builder.AddBizcordLogging(builder.Configuration["Logging:ServiceName"] ?? "ChatService");
 
 // Persistence
@@ -45,7 +45,7 @@ builder.Services.AddControllers();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-// Altid - ellers mapper DomainExceptionHandler ikke fejl til 4xx under udvikling.
+// Always - otherwise DomainExceptionHandler does not map errors to 4xx in development.
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
@@ -61,5 +61,5 @@ app.MapControllers();
 
 app.Run();
 
-// Gør Program synlig for WebApplicationFactory i API-testene.
+// Makes Program visible to WebApplicationFactory in the API tests.
 public partial class Program;

@@ -1,6 +1,6 @@
 namespace ChatService.Domain;
 
-/// <summary>Del af Chat-aggregatet - oprettes kun via Chat.</summary>
+/// <summary>Part of the Chat aggregate - created only via Chat.</summary>
 public sealed class ChatParticipant
 {
     public Guid Id { get; }

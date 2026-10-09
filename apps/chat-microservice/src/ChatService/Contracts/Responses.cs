@@ -1,6 +1,6 @@
 namespace ChatService.Contracts;
 
-// Delt model: kun hvad andre har brug for. Interne id'er (fx deltager-id) eksponeres ikke.
+// Shared model: only what others need. Internal ids (e.g. participant id) are not exposed.
 
 public sealed record ChatResponse(
     Guid Id,

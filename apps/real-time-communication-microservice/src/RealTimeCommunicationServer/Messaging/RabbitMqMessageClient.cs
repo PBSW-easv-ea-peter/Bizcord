@@ -7,7 +7,7 @@ namespace RealTimeCommunicationServer.Messaging;
 
 public class RabbitMqMessageClient : IMessageClient
 {
-    /// <summary>W3C Trace Context-header, sat af publisheren (fx ChatService).</summary>
+    /// <summary>W3C Trace Context header, set by the publisher (e.g. ChatService).</summary>
     public const string TraceParentHeader = "traceparent";
 
     private readonly IBus _bus;
@@ -36,8 +36,8 @@ public class RabbitMqMessageClient : IMessageClient
     }
 
     /// <summary>
-    /// Samme topologi som PubSub.SubscribeAsync (EasyNetQ's navne-conventions), men via advanced API'et,
-    /// fordi PubSub ikke giver adgang til beskedens headers - og dermed traceparent.
+    /// Same topology as PubSub.SubscribeAsync (EasyNetQ's naming conventions), but via the advanced API,
+    /// because PubSub gives no access to the message headers - and thus not to traceparent.
     /// </summary>
     public async Task Subscribe<T>(
         string subscriptionId,
@@ -57,7 +57,7 @@ public class RabbitMqMessageClient : IMessageClient
             queue,
             async (message, _) =>
             {
-                // Fortsætter publisherens trace. Uden header bliver det en ny rod-trace.
+                // Continues the publisher's trace. Without the header it becomes a new root trace.
                 using var activity = new Activity($"{exchangeName} process");
                 if (ReadTraceParent(message.Properties) is { } traceParent)
                     activity.SetParentId(traceParent);
@@ -70,7 +70,7 @@ public class RabbitMqMessageClient : IMessageClient
     private static string? ReadTraceParent(
         MessageProperties properties)
     {
-        // RabbitMQ leverer string-headers som byte[].
+        // RabbitMQ delivers string headers as byte[].
         if (properties.Headers is null || !properties.Headers.TryGetValue(TraceParentHeader, out var value))
             return null;
 

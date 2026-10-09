@@ -82,7 +82,7 @@ public class MessageRepositoryTests
     public async Task UpdateAsync_AlreadyDeletedInDb_ReturnsFalseAndKeepsDeletion()
     {
         var (chat, message) = await AddMessageAsync();
-        // To kopier af samme besked - som to samtidige requests.
+        // Two copies of the same message - like two concurrent requests.
         var deleting = (await _messages.GetAsync(message.Id))!;
         var editing = (await _messages.GetAsync(message.Id))!;
         deleting.Delete(chat, message.SenderUserId, Now);

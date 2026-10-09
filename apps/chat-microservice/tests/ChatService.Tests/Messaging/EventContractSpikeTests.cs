@@ -11,8 +11,8 @@ using RabbitMQ.Client.Events;
 namespace ChatService.Tests.Messaging
 {
     /// <summary>
-    /// Spike: beviser at event-kontrakten er uafhængig af C#-typer og sprog.
-    /// RabbitMQ kører i en Testcontainer (se TestBroker).
+    /// Spike: proves that the event contract is independent of C# types and language.
+    /// RabbitMQ runs in a Testcontainer (see TestBroker).
     /// </summary>
     [Trait("Category", "Integration")]
     public class EventContractSpikeTests
@@ -32,7 +32,7 @@ namespace ChatService.Tests.Messaging
         [Fact]
         public async Task ConsumerWithOwnClassInOtherNamespace_ReceivesEvent()
         {
-            // "RTC": egen klasse, andet namespace, kun de felter den har brug for - samme logiske navn.
+            // "RTC": its own class, a different namespace, only the fields it needs - same logical name.
             await using var consumerServices = CreateServices(new EventTypeNames(new Dictionary<Type, string>
             {
                 [typeof(OtherTeam.MessageSentV1)] = EventNames.MessageSent
@@ -42,7 +42,7 @@ namespace ChatService.Tests.Messaging
             var received = new TaskCompletionSource<OtherTeam.MessageSentV1>(TaskCreationOptions.RunContinuationsAsynchronously);
             await consumerServices.GetRequiredService<IBus>().PubSub.SubscribeAsync<OtherTeam.MessageSentV1>(
                 $"spike-{Guid.NewGuid()}",
-                // Brokeren deles med andre tests, der også publicerer chat.message-sent - kun vores eget event tæller.
+                // The broker is shared with other tests that also publish chat.message-sent - only our own event counts.
                 (message, _) =>
                 {
                     if (message.MessageId == Event.MessageId)
@@ -61,7 +61,7 @@ namespace ChatService.Tests.Messaging
         [Fact]
         public async Task RawConsumer_SeesLogicalNamesAndCamelCaseJson()
         {
-            // Ingen EasyNetQ, ingen C#-kontrakt - som en consumer skrevet i et andet sprog.
+            // No EasyNetQ, no C# contract - like a consumer written in another language.
             var factory = new ConnectionFactory
             {
                 HostName = TestBroker.Host, Port = TestBroker.Port, UserName = TestBroker.UserName, Password = TestBroker.Password
@@ -76,10 +76,10 @@ namespace ChatService.Tests.Messaging
             var consumer = new AsyncEventingBasicConsumer(channel);
             consumer.ReceivedAsync += (_, delivery) =>
             {
-                // Body-bufferen genbruges efter handleren - kopiér nu.
+                // The body buffer is reused after the handler returns - copy it now.
                 var body = Encoding.UTF8.GetString(delivery.Body.Span);
 
-                // Brokeren deles med andre tests - kun vores eget event tæller.
+                // The broker is shared with other tests - only our own event counts.
                 if (body.Contains(Event.MessageId.ToString()))
                     received.TrySetResult((delivery.Exchange, delivery.BasicProperties.Type, body));
                 return Task.CompletedTask;
@@ -103,6 +103,6 @@ namespace ChatService.Tests.Messaging
 
 namespace ChatService.Tests.Messaging.OtherTeam
 {
-    /// <summary>Et andet teams egen repræsentation af eventet (tolerant reader).</summary>
+    /// <summary>Another team's own representation of the event (tolerant reader).</summary>
     public sealed record MessageSentV1(Guid MessageId, Guid ChatId, string Content);
 }

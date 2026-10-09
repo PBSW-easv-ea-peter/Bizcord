@@ -22,7 +22,7 @@ public sealed class MessagesController(MessageAppService messages) : ControllerB
         return StatusCode(StatusCodes.Status201Created, message.ToResponse());
     }
 
-    /// <summary>Nyeste først. Brug id'et på den ældste modtagne besked som <paramref name="before"/> for at bladre tilbage.</summary>
+    /// <summary>Newest first. Use the id of the oldest received message as <paramref name="before"/> to page back.</summary>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<MessageResponse>>> GetPage(
         [FromHeader(Name = UserHeader.Name), BindRequired] Guid userId,
@@ -36,7 +36,7 @@ public sealed class MessagesController(MessageAppService messages) : ControllerB
         return Ok(page.Select(m => m.ToResponse()).ToList());
     }
 
-    /// <summary>Kun afsenderen. Erstatter indholdet og sætter editedAt.</summary>
+    /// <summary>Sender only. Replaces the content and sets editedAt.</summary>
     [HttpPut("{messageId:guid}")]
     public async Task<ActionResult<MessageResponse>> Edit(
         [FromHeader(Name = UserHeader.Name), BindRequired] Guid userId,
@@ -50,7 +50,7 @@ public sealed class MessagesController(MessageAppService messages) : ControllerB
         return Ok(message.ToResponse());
     }
 
-    /// <summary>Kun afsenderen. Blød sletning - beskeden bliver i historikken uden indhold. Idempotent.</summary>
+    /// <summary>Sender only. Soft delete - the message stays in the history without content. Idempotent.</summary>
     [HttpDelete("{messageId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(
@@ -64,7 +64,7 @@ public sealed class MessagesController(MessageAppService messages) : ControllerB
         return NoContent();
     }
 
-    /// <summary>Markerer alle andres beskeder til og med denne som set. Idempotent.</summary>
+    /// <summary>Marks all other users' messages up to and including this one as seen. Idempotent.</summary>
     [HttpPost("{messageId:guid}/seen")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> MarkSeen(

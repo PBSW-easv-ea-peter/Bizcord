@@ -7,7 +7,7 @@ using RealTimeCommunicationServer.Realtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Logging: skabelon-JSON til stdout (libs/Bizcord.Logging)
+// Logging: template-shaped JSON to stdout (libs/Bizcord.Logging)
 builder.AddBizcordLogging(builder.Configuration["Logging:ServiceName"] ?? "RealTimeCommunicationService");
 
 // OpenAPI
@@ -20,14 +20,14 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 
 // Messaging
-// Fuld connection string, hvis den er sat (fx Testcontainers), ellers kun host som i compose (RabbitMq__Host).
+// Full connection string if set (e.g. Testcontainers), otherwise just the host as in compose (RabbitMq__Host).
 var rabbitMqConnectionString = builder.Configuration.GetConnectionString("RabbitMq")
     ?? $"host={builder.Configuration["RabbitMq:Host"] ?? "localhost"}";
-// camelCase JSON og logiske event-navne, så vi kan læse ChatService's events (se contracts.md).
+// camelCase JSON and logical event names, so we can read ChatService's events (see contracts.md).
 builder.Services
     .AddEasyNetQ(rabbitMqConnectionString)
     .UseSystemTextJson(new JsonSerializerOptions(JsonSerializerDefaults.Web));
-// Skal registreres efter AddEasyNetQ for at overtage standard-serializeren.
+// Must be registered after AddEasyNetQ to replace the default serializer.
 builder.Services.AddSingleton<ITypeNameSerializer, EventTypeNames>();
 builder.Services.AddSingleton<IMessageClient, RabbitMqMessageClient>();
 builder.Services.AddMessageHandlers(typeof(Program).Assembly);
@@ -62,5 +62,5 @@ app.MapHub<ChatHub>(ChatHub.Path);
 
 app.Run();
 
-// Gør Program synlig for WebApplicationFactory i testene.
+// Makes Program visible to WebApplicationFactory in the tests.
 public partial class Program;

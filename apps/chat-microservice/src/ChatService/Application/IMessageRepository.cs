@@ -9,11 +9,11 @@ public interface IMessageRepository
     Task AddAsync(Message message, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gemmer indhold, editedAt og deletedAt. Rører ikke en allerede slettet besked, så en samtidig sletning vinder.
-    /// Returnerer false, hvis intet blev gemt.
+    /// Saves content, editedAt and deletedAt. Does not touch an already deleted message, so a concurrent delete wins.
+    /// Returns false if nothing was saved.
     /// </summary>
     Task<bool> UpdateAsync(Message message, CancellationToken cancellationToken = default);
 
-    /// <summary>Nyeste først. Med <paramref name="before"/> hentes beskeder sendt før den.</summary>
+    /// <summary>Newest first. With <paramref name="before"/>, fetches messages sent before that one.</summary>
     Task<IReadOnlyList<Message>> GetPageAsync(Guid chatId, Message? before, int limit, CancellationToken cancellationToken = default);
 }

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace ChatService.Tests.Api;
 
-/// <summary>Hele HTTP-pipelinen mod chatDB i en Testcontainer (se TestDatabase).</summary>
+/// <summary>The full HTTP pipeline against chatDB in a Testcontainer (see TestDatabase).</summary>
 [Trait("Category", "Integration")]
 public class ChatApiTests(ChatApiFactory factory) : IClassFixture<ChatApiFactory>
 {
@@ -26,7 +26,7 @@ public class ChatApiTests(ChatApiFactory factory) : IClassFixture<ChatApiFactory
         var alice = ClientFor(_alice);
         var bob = ClientFor(_bob);
 
-        // Opret gruppe
+        // Create group
         var createResponse = await alice.PostAsJsonAsync("/chats/group", new CreateGroupChatRequest("Team"));
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
         Assert.NotNull(createResponse.Headers.Location);
@@ -34,25 +34,25 @@ public class ChatApiTests(ChatApiFactory factory) : IClassFixture<ChatApiFactory
         Assert.Equal("Group", chat.Type);
         Assert.Equal("Owner", Assert.Single(chat.Participants).Role);
 
-        // Tilføj Bob
+        // Add Bob
         var addResponse = await alice.PostAsJsonAsync($"/chats/{chat.Id}/participants", new AddParticipantRequest(_bob));
         Assert.Equal(HttpStatusCode.Created, addResponse.StatusCode);
 
-        // Bob sender
+        // Bob sends
         var sendResponse = await bob.PostAsJsonAsync($"/chats/{chat.Id}/messages", new SendMessageRequest("Hej Alice"));
         Assert.Equal(HttpStatusCode.Created, sendResponse.StatusCode);
         var message = (await sendResponse.Content.ReadFromJsonAsync<MessageResponse>())!;
         Assert.Contains(factory.MessageClient.Published, e => e is MessageSent sent && sent.MessageId == message.Id);
 
-        // Alice henter beskeder
+        // Alice fetches messages
         var page = await alice.GetFromJsonAsync<List<MessageResponse>>($"/chats/{chat.Id}/messages");
         Assert.Equal(message.Id, Assert.Single(page!).Id);
 
-        // Alice markerer som set
+        // Alice marks as seen
         var seenResponse = await alice.PostAsync($"/chats/{chat.Id}/messages/{message.Id}/seen", null);
         Assert.Equal(HttpStatusCode.NoContent, seenResponse.StatusCode);
 
-        // Bob ser, at Alice har set den
+        // Bob sees that Alice has seen it
         var receipts = await bob.GetFromJsonAsync<List<ReceiptResponse>>($"/chats/{chat.Id}/messages/{message.Id}/receipts");
         var receipt = Assert.Single(receipts!);
         Assert.Equal(_alice, receipt.UserId);
@@ -149,13 +149,13 @@ public class ChatApiTests(ChatApiFactory factory) : IClassFixture<ChatApiFactory
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
         Assert.Single(factory.MessageClient.Published, e => e is MessageDeleted m && m.MessageId == message.Id);
 
-        // Alice ser den som slettet i historikken
+        // Alice sees it as deleted in the history
         var page = await ClientFor(_alice).GetFromJsonAsync<List<MessageResponse>>($"/chats/{chat.Id}/messages");
         var deleted = Assert.Single(page!);
         Assert.Null(deleted.Content);
         Assert.NotNull(deleted.DeletedAt);
 
-        // En slettet besked kan ikke redigeres
+        // A deleted message cannot be edited
         var editDeleted = await bob.PutAsJsonAsync($"/chats/{chat.Id}/messages/{message.Id}", new EditMessageRequest("Igen"));
         await AssertProblemAsync(editDeleted, HttpStatusCode.Conflict);
     }
@@ -193,7 +193,7 @@ public class ChatApiTests(ChatApiFactory factory) : IClassFixture<ChatApiFactory
         await AssertProblemAsync(response, HttpStatusCode.NotFound);
     }
 
-    /// <summary>Direct-chat mellem Alice og Bob, hvor Bob har sendt "Hej".</summary>
+    /// <summary>Direct chat between Alice and Bob, where Bob has sent "Hej".</summary>
     private async Task<(ChatResponse Chat, MessageResponse Message)> CreateDirectChatWithMessageAsync()
     {
         var createResponse = await ClientFor(_alice).PostAsJsonAsync("/chats/direct", new CreateDirectChatRequest(_bob));

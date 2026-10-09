@@ -1,6 +1,6 @@
 namespace Bizcord.Logging;
 
-/// <summary>Property-navne, som formatteren trækker ud af Payload og placerer i skabelonens faste felter.</summary>
+/// <summary>Property names that the formatter pulls out of Payload and places in the template's fixed fields.</summary>
 internal static class LogProperties
 {
     public const string Service = "Service";

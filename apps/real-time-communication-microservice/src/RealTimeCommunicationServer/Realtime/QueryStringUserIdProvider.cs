@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.SignalR;
 namespace RealTimeCommunicationServer.Realtime;
 
 /// <summary>
-/// Hvem forbindelsen tilhører: ?userId=... (svarer til ChatService' X-User-Id - vi stoler på den i MVP).
-/// Query frem for header, fordi browserens WebSocket-API ikke kan sætte headere.
-/// Erstattes af et token (uge 45); så er det kun her, der skal ændres.
+/// Who the connection belongs to: ?userId=... (equivalent to ChatService's X-User-Id - we trust it in the MVP).
+/// Query string rather than header, because the browser's WebSocket API cannot set headers.
+/// To be replaced by a token (week 45); then this is the only place that needs to change.
 /// </summary>
 public class QueryStringUserIdProvider : IUserIdProvider
 {
@@ -15,9 +15,9 @@ public class QueryStringUserIdProvider : IUserIdProvider
         Normalize(connection.GetHttpContext()?.Request.Query[QueryKey].FirstOrDefault());
 
     /// <summary>
-    /// Kanonisk Guid-form (små bogstaver, med bindestreger) - eller null, hvis det ikke er en Guid.
-    /// SignalR matcher Clients.Users(...) på den præcise streng, så "ABC…" og "abc…" ville være to brugere:
-    /// presence (Guid) ville kalde dem online, men pushet ville aldrig nå frem.
+    /// Canonical Guid form (lowercase, with hyphens) - or null if it is not a Guid.
+    /// SignalR matches Clients.Users(...) on the exact string, so "ABC…" and "abc…" would be two users:
+    /// presence (Guid) would report them online, but the push would never arrive.
     /// </summary>
     public static string? Normalize(string? userId) =>
         Guid.TryParse(userId, out var id) ? id.ToString() : null;

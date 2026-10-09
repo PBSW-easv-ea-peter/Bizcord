@@ -1,7 +1,7 @@
 namespace ChatService.Infrastructure.Persistence;
 
 /// <summary>
-/// Npgsql kræver UTC ved skrivning til timestamptz og returnerer DateTime (UTC) ved læsning.
+/// Npgsql requires UTC when writing to timestamptz and returns DateTime (UTC) when reading.
 /// </summary>
 internal static class DbTime
 {

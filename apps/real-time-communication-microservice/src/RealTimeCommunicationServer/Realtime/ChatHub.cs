@@ -4,15 +4,15 @@ using RealTimeCommunicationServer.Contracts;
 
 namespace RealTimeCommunicationServer.Realtime;
 
-/// <summary>Det klienten kan modtage. Metodenavnet er kontrakten (se docs/contracts.md).</summary>
+/// <summary>What the client can receive. The method name is the contract (see docs/contracts.md).</summary>
 public interface IChatClient
 {
     Task MessageReceived(MessageReceived message);
 }
 
 /// <summary>
-/// Klienter forbinder på /hubs/chat?userId=... og modtager push. Klienten kalder ikke noget på hubben -
-/// den sender beskeder via ChatService' REST API.
+/// Clients connect to /hubs/chat?userId=... and receive push. The client calls nothing on the hub -
+/// it sends messages via ChatService's REST API.
 /// </summary>
 public class ChatHub : Hub<IChatClient>
 {
@@ -46,7 +46,7 @@ public class ChatHub : Hub<IChatClient>
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        // Afviste forbindelser blev aldrig talt med.
+        // Rejected connections were never counted.
         if (Guid.TryParse(Context.UserIdentifier, out var userId))
         {
             _presence.Disconnected(userId);

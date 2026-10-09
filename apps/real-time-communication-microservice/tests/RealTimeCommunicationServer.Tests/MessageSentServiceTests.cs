@@ -8,8 +8,8 @@ using RealTimeCommunicationServer.Realtime;
 namespace RealTimeCommunicationServer.Tests;
 
 /// <summary>
-/// Service test: hele RTC (rigtig opsætning, rigtig RabbitMQ, rigtig SignalR-klient) - ingen ChatService.
-/// Eventet publiceres direkte på brokeren, som ChatService ville gøre det.
+/// Service test: all of RTC (real setup, real RabbitMQ, real SignalR client) - no ChatService.
+/// The event is published directly on the broker, the way ChatService would.
 /// </summary>
 [Trait("Category", "Integration")]
 public class MessageSentServiceTests(RtcApiFactory factory) : IClassFixture<RtcApiFactory>
@@ -19,14 +19,14 @@ public class MessageSentServiceTests(RtcApiFactory factory) : IClassFixture<RtcA
     private readonly Guid _alice = Guid.NewGuid();
     private readonly Guid _bob = Guid.NewGuid();
 
-    // STORE bogstaver: regression - presence kaldte brugeren online, men SignalR matchede ikke strengen,
-    // så pushet forsvandt, mens rtc.message-delivered alligevel blev publiceret.
+    // UPPERCASE: regression - presence reported the user online, but SignalR did not match the string,
+    // so the push was lost while rtc.message-delivered was still published.
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task MessageSent_IsPushedToOnlineRecipient_AndMessageDeliveredPublished(bool upperCaseUserId)
     {
-        // Arrange: Alice er online, Bob er ikke
+        // Arrange: Alice is online, Bob is not
         var pushed = new TaskCompletionSource<MessageReceived>(TaskCreationOptions.RunContinuationsAsynchronously);
         await using var alice = ConnectAs(upperCaseUserId ? _alice.ToString().ToUpperInvariant() : _alice.ToString());
         alice.On<MessageReceived>(nameof(IChatClient.MessageReceived), message => pushed.TrySetResult(message));
@@ -43,7 +43,7 @@ public class MessageSentServiceTests(RtcApiFactory factory) : IClassFixture<RtcA
 
         var sent = new MessageSent(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Hej", DateTimeOffset.UtcNow, [_alice, _bob]);
 
-        // Act: RTC's MessageSent mapper til 'chat.message-sent' - samme exchange som ChatService publicerer på
+        // Act: RTC's MessageSent maps to 'chat.message-sent' - the same exchange ChatService publishes to
         await messageClient.Publish(sent);
 
         // Assert
@@ -61,13 +61,13 @@ public class MessageSentServiceTests(RtcApiFactory factory) : IClassFixture<RtcA
         new HubConnectionBuilder()
             .WithUrl(new Uri(factory.Server.BaseAddress, $"{ChatHub.Path}?{QueryStringUserIdProvider.QueryKey}={userId}"), options =>
             {
-                // Gennem TestServer i hukommelsen - LongPolling, fordi TestServer ikke laver rigtige WebSockets her.
+                // Through the in-memory TestServer - LongPolling, because TestServer doesn't do real WebSockets here.
                 options.HttpMessageHandlerFactory = _ => factory.Server.CreateHandler();
                 options.Transports = HttpTransportType.LongPolling;
             })
             .Build();
 
-    // Hubben registrerer presence i OnConnectedAsync, som kan køre lige efter klientens StartAsync returnerer.
+    // The hub registers presence in OnConnectedAsync, which may run just after the client's StartAsync returns.
     private async Task WaitUntilOnline(Guid userId)
     {
         var presence = factory.Services.GetRequiredService<PresenceTracker>();

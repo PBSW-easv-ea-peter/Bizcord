@@ -4,9 +4,9 @@ using Microsoft.Extensions.Logging;
 namespace Bizcord.Logging;
 
 /// <summary>
-/// ILogger kender ikke kaldestedet. Caller-attributterne udfyldes af compileren ved kaldet og lægges i et scope,
-/// som Serilog gør til properties. Payload lægges i samme scope.
-/// params object[] kan ikke kombineres med caller-attributter (params skal stå sidst) - derfor en fast signatur.
+/// ILogger doesn't know the call site. The caller attributes are filled in by the compiler at the call and put in a scope,
+/// which Serilog turns into properties. Payload goes in the same scope.
+/// params object[] can't be combined with caller attributes (params must come last) - hence a fixed signature.
 /// </summary>
 public static class LoggerLocationExtensions
 {
@@ -37,14 +37,14 @@ public static class LoggerLocationExtensions
 
         if (payload is not null)
         {
-            // Anonyme objekter foldes ud til properties, så de ender som felter i Payload.
+            // Anonymous objects are flattened into properties, so they end up as fields in Payload.
             foreach (var property in payload.GetType().GetProperties())
                 state[property.Name] = property.GetValue(payload);
         }
 
         using (logger.BeginScope(state))
         {
-            // Beskeden er fast tekst, ikke et message template - krøllede parenteser escapes.
+            // The message is plain text, not a message template - curly braces are escaped.
             logger.Log(level, exception, message.Replace("{", "{{").Replace("}", "}}"));
         }
     }

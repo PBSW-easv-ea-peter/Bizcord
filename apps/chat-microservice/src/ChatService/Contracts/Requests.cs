@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ChatService.Contracts;
 
-// Kun formen valideres her - indholdsregler (længde, tomhed) ligger i domænet.
+// Only the shape is validated here - content rules (length, emptiness) live in the domain.
 
 public sealed record CreateDirectChatRequest([Required] Guid? OtherUserId);
 

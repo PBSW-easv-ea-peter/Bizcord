@@ -4,7 +4,7 @@ using ChatService.Domain;
 
 namespace ChatService.Application;
 
-/// <summary>Use cases for beskeder og receipts. Orkestrerer - forretningsreglerne ligger i domænet.</summary>
+/// <summary>Use cases for messages and receipts. Orchestrates only - the business rules live in the domain.</summary>
 public sealed class MessageAppService(
     IChatRepository chats,
     IMessageRepository messages,
@@ -25,7 +25,7 @@ public sealed class MessageAppService(
         await messages.AddAsync(message, cancellationToken);
         logger.Information("Message sent.", new { ChatId = chat.Id, MessageId = message.Id });
 
-        // Fedt event: modtagerne er med, så RTC kan pushe uden at kalde tilbage.
+        // Fat event: the recipients are included, so RTC can push without calling back.
         await messageClient.TryPublishAsync(new MessageSent(
             message.Id, chat.Id, senderUserId, messageContent.Value, message.SentAt, Recipients(chat, senderUserId)), logger);
 
@@ -51,7 +51,7 @@ public sealed class MessageAppService(
         return message;
     }
 
-    /// <summary>Idempotent: en allerede slettet besked giver intet nyt event.</summary>
+    /// <summary>Idempotent: an already deleted message produces no new event.</summary>
     public async Task DeleteAsync(Guid chatId, Guid requestedByUserId, Guid messageId, CancellationToken cancellationToken = default)
     {
         var chat = await GetChatAsync(chatId, cancellationToken);
@@ -60,7 +60,7 @@ public sealed class MessageAppService(
         if (!message.Delete(chat, requestedByUserId, time.GetUtcNowInMicroseconds()))
             return;
 
-        // False betyder, at en samtidig request nåede at slette først - den har publiceret eventet.
+        // False means a concurrent request deleted it first - that request has published the event.
         if (!await messages.UpdateAsync(message, cancellationToken))
             return;
 
@@ -86,7 +86,7 @@ public sealed class MessageAppService(
     {
         var chat = await GetReadableChatAsync(chatId, userId, cancellationToken);
 
-        // Cursoren hentes fra DB'en, så sent_at matcher præcist i "til og med"-sammenligningen.
+        // The cursor is read from the DB, so sent_at matches exactly in the "up to and including" comparison.
         var upTo = await GetMessageInChatAsync(chat.Id, messageId, cancellationToken);
 
         var now = time.GetUtcNowInMicroseconds();
@@ -94,14 +94,14 @@ public sealed class MessageAppService(
 
         logger.Information("Messages marked as seen.", new { ChatId = chat.Id, UpToMessageId = upTo.Id, Marked = marked });
 
-        // Kun når noget faktisk ændrede sig - gentagne kald giver ikke støj på bussen.
+        // Only when something actually changed - repeated calls don't create noise on the bus.
         if (marked > 0)
             await messageClient.TryPublishAsync(new MessagesSeen(chat.Id, userId, upTo.Id, now), logger);
     }
 
     /// <summary>
-    /// Fra RTC's 'rtc.message-delivered'. Ingen adgangstjek - det er en intern notifikation, ikke et brugerkald.
-    /// En ukendt besked ignoreres: REST API'et er sandheden, events er notifikationer.
+    /// From RTC's 'rtc.message-delivered'. No access check - it is an internal notification, not a user call.
+    /// An unknown message is ignored: the REST API is the source of truth, events are notifications.
     /// </summary>
     public async Task MarkDeliveredAsync(Guid messageId, IReadOnlyCollection<Guid> userIds, DateTimeOffset deliveredAt, CancellationToken cancellationToken = default)
     {
@@ -139,7 +139,7 @@ public sealed class MessageAppService(
         return chat;
     }
 
-    /// <summary>En besked fra en anden chat behandles som ikke-fundet - den hører ikke til denne ressource.</summary>
+    /// <summary>A message from another chat is treated as not found - it does not belong to this resource.</summary>
     private async Task<Message> GetMessageInChatAsync(Guid chatId, Guid messageId, CancellationToken cancellationToken)
     {
         var message = await messages.GetAsync(messageId, cancellationToken);

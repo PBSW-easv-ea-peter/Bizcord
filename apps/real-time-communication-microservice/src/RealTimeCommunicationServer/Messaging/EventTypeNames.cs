@@ -4,9 +4,9 @@ using RealTimeCommunicationServer.Contracts;
 namespace RealTimeCommunicationServer.Messaging;
 
 /// <summary>
-/// Oversætter ChatService's logiske event-navne til RTC's egne typer.
-/// EasyNetQ udleder exchange-navnet herfra, så navnene skal matche publisherens præcist.
-/// Ukendte typer (fx PingMessage) bruger EasyNetQ's standardnavn.
+/// Maps ChatService's logical event names to RTC's own types.
+/// EasyNetQ derives the exchange name from this, so the names must match the publisher's exactly.
+/// Unknown types (e.g. PingMessage) use EasyNetQ's default name.
 /// </summary>
 public class EventTypeNames : ITypeNameSerializer
 {

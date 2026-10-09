@@ -40,7 +40,7 @@ public class ReceiptRepositoryTests
 
         var marked = await _receipts.MarkSeenUpToAsync(_bob, upTo: m[2], Now.AddMinutes(1));
 
-        Assert.Equal(2, marked); // 1 og 3 - ikke Bobs egen (2), ikke efter X (4)
+        Assert.Equal(2, marked); // 1 and 3 - not Bob's own (2), not after X (4)
         Assert.Single(await _receipts.GetForMessageAsync(m[0].Id));
         Assert.Empty(await _receipts.GetForMessageAsync(m[1].Id));
         Assert.Single(await _receipts.GetForMessageAsync(m[2].Id));
@@ -55,7 +55,7 @@ public class ReceiptRepositoryTests
 
         var marked = await _receipts.MarkSeenUpToAsync(_bob, upTo: m[3], Now.AddMinutes(5));
 
-        Assert.Equal(2, marked); // kun 3 og 4 er nye
+        Assert.Equal(2, marked); // only 3 and 4 are new
         var first = Assert.Single(await _receipts.GetForMessageAsync(m[0].Id));
         Assert.Equal(Now.AddMinutes(1), first.SeenAt);
         var last = Assert.Single(await _receipts.GetForMessageAsync(m[3].Id));
@@ -67,10 +67,10 @@ public class ReceiptRepositoryTests
     {
         var m = await CreateConversationAsync();
 
-        var marked = await _receipts.MarkDeliveredAsync(m[0].Id, [_bob, _alice], Now.AddMinutes(1)); // m[0] er Alices
+        var marked = await _receipts.MarkDeliveredAsync(m[0].Id, [_bob, _alice], Now.AddMinutes(1)); // m[0] is Alice's
         var again = await _receipts.MarkDeliveredAsync(m[0].Id, [_bob], Now.AddMinutes(5));
 
-        Assert.Equal(1, marked); // kun Bob - ingen receipt for afsenderen
+        Assert.Equal(1, marked); // only Bob - no receipt for the sender
         Assert.Equal(0, again);
         var receipt = Assert.Single(await _receipts.GetForMessageAsync(m[0].Id));
         Assert.Equal(_bob, receipt.UserId);

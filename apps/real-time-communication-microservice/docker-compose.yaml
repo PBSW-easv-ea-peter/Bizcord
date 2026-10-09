@@ -19,11 +19,11 @@ services:
 
   realtimecommunicationserver:
     build:
-      context: ../..  # repo-roden, så libs/Bizcord.Logging er med
+      context: ../..  # repo root, so libs/Bizcord.Logging is included
       dockerfile: apps/real-time-communication-microservice/Dockerfile
     container_name: realtimecommunicationserver
     ports:
-      - "8080:5030" #Vi skal lige afklare, om denne er 8080:5030, eller 8080:8080
+      - "8080:5030" #Still to be clarified whether this should be 8080:5030 or 8080:8080
     environment:
       RabbitMq__Host: rabbitmq
       ASPNETCORE_ENVIRONMENT: Development

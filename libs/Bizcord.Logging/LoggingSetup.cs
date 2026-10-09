@@ -6,7 +6,7 @@ namespace Bizcord.Logging;
 
 public static class LoggingSetup
 {
-    /// <summary>Erstatter standard-loggeren med Serilog, som skriver skabelon-JSON til stdout.</summary>
+    /// <summary>Replaces the default logger with Serilog, which writes template JSON to stdout.</summary>
     public static IHostApplicationBuilder AddBizcordLogging(this IHostApplicationBuilder builder, string serviceName)
     {
         builder.Services.AddSerilog(config => config

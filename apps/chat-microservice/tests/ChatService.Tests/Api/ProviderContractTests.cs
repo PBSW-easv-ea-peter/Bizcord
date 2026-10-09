@@ -44,26 +44,26 @@ public class ProviderContractTests(ChatApiFactory factory) : IClassFixture<ChatA
 
         // Act
 
-        // Bob sends message. Serveren afrunder til mikrosekunder, så 'before' får 1 sekunds slæk.
+        // Bob sends message. The server rounds to microseconds, so 'before' gets 1 second of slack.
         var before = DateTimeOffset.UtcNow.AddSeconds(-1);
         var sendResponse = await bob.PostAsJsonAsync($"/chats/{chat.Id}/messages", new SendMessageRequest(content));
         var after = DateTimeOffset.UtcNow;
         Assert.Equal(HttpStatusCode.Created, sendResponse.StatusCode);
         var message = (await sendResponse.Content.ReadFromJsonAsync<MessageResponse>())!;
 
-        // Find event - Published deles af alle tests i klassen, så find på id frem for Assert.Single
+        // Find event - Published is shared by all tests in the class, so find by id rather than Assert.Single
         var published = factory.MessageClient.Published
             .OfType<MessageSent>()
             .Single(e => e.MessageId == message.Id);
 
-        // Assert - sammenlign med input, hvor vi kender værdien uafhængigt af serveren
+        // Assert - compare with the input, where we know the value independently of the server
         Assert.NotEqual(Guid.Empty, published.MessageId);
         Assert.Equal(chat.Id, published.ChatId);
         Assert.Equal(_bob, published.SenderUserId);
         Assert.Equal(content, published.Content);
         Assert.Equal(new[] { _alice, _carol }.Order(), published.RecipientUserIds.Order());
 
-        // Serverens egne værdier: skal matche svaret OG være fornuftige (ikke default)
+        // The server's own values: must match the response AND be sensible (not default)
         Assert.Equal(message.SentAt, published.SentAt);
         Assert.InRange(published.SentAt, before, after);
     }

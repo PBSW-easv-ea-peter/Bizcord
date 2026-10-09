@@ -10,7 +10,7 @@ namespace Bizcord.Logging.Tests;
 
 public class TemplateJsonFormatterTests
 {
-    /// <summary>Samme pipeline som AddBizcordLogging, men til en StringWriter i stedet for stdout.</summary>
+    /// <summary>Same pipeline as AddBizcordLogging, but to a StringWriter instead of stdout.</summary>
     private static (Microsoft.Extensions.Logging.ILogger Logger, Func<JsonElement> Output) CreateLogger()
     {
         var sink = new StringWriterSink();

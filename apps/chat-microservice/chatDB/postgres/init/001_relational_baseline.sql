@@ -4,7 +4,7 @@ create table chats (
     type varchar(50) not null
         constraint ck_chats_type check (type in ('Direct', 'Group')),
     created_at timestamptz not null,
-    -- "<mindste userId>:<største userId>" - sikrer højst én direct-chat pr. brugerpar
+    -- "<smallest userId>:<largest userId>" - ensures at most one direct chat per user pair
     direct_key varchar(73),
 
     constraint ck_chats_direct_key

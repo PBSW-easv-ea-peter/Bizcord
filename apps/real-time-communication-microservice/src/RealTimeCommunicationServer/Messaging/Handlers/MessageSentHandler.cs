@@ -5,8 +5,8 @@ using RealTimeCommunicationServer.Realtime;
 namespace RealTimeCommunicationServer.Messaging.Handlers;
 
 /// <summary>
-/// Pusher beskeden til de modtagere, der er online, og fortæller resten af systemet hvem der fik den
-/// (rtc.message-delivered). Logger kun id'er - aldrig Content (GDPR).
+/// Pushes the message to the recipients who are online and tells the rest of the system who received it
+/// (rtc.message-delivered). Logs only ids - never Content (GDPR).
 /// </summary>
 public class MessageSentHandler : IMessageHandler<MessageSent>
 {
@@ -36,7 +36,7 @@ public class MessageSentHandler : IMessageHandler<MessageSent>
     {
         var online = _presence.OnlineAmong(message.RecipientUserIds);
 
-        // Ingen at levere til - offline modtagere henter beskeden via ChatService' REST API.
+        // Nobody to deliver to - offline recipients fetch the message via ChatService's REST API.
         if (online.Count == 0)
         {
             _logger.Information(

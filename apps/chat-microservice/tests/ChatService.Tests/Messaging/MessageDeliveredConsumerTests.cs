@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ChatService.Tests.Messaging;
 
-/// <summary>ChatService med rigtig DB og rigtig RabbitMQ (begge Testcontainers) - inkl. MessageDeliveredConsumer.</summary>
+/// <summary>ChatService with a real DB and real RabbitMQ (both Testcontainers) - including MessageDeliveredConsumer.</summary>
 public sealed class ChatServiceWithBrokerFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -20,8 +20,8 @@ public sealed class ChatServiceWithBrokerFactory : WebApplicationFactory<Program
 }
 
 /// <summary>
-/// Service test: et 'rtc.message-delivered' på brokeren ender som deliveredAt i receipts-API'et.
-/// Eventet publiceres, som RTC ville gøre det - RTC selv er ikke med.
+/// Service test: an 'rtc.message-delivered' on the broker ends up as deliveredAt in the receipts API.
+/// The event is published the way RTC would publish it - RTC itself is not involved.
 /// </summary>
 [Trait("Category", "Integration")]
 public class MessageDeliveredConsumerTests(ChatServiceWithBrokerFactory factory) : IClassFixture<ChatServiceWithBrokerFactory>
@@ -39,7 +39,7 @@ public class MessageDeliveredConsumerTests(ChatServiceWithBrokerFactory factory)
     [Fact]
     public async Task MessageDelivered_SetsDeliveredAtOnReceipt()
     {
-        // Arrange: Alice sender til Bob
+        // Arrange: Alice sends to Bob
         var alice = ClientFor(_alice);
         var createResponse = await alice.PostAsJsonAsync("/chats/direct", new CreateDirectChatRequest(_bob));
         var chat = (await createResponse.Content.ReadFromJsonAsync<ChatResponse>())!;
@@ -49,11 +49,11 @@ public class MessageDeliveredConsumerTests(ChatServiceWithBrokerFactory factory)
 
         var deliveredAt = new DateTimeOffset(2026, 10, 5, 12, 0, 0, TimeSpan.Zero);
 
-        // Act: ChatService' MessageDelivered mapper til 'rtc.message-delivered' - samme exchange som RTC publicerer på
+        // Act: ChatService's MessageDelivered maps to 'rtc.message-delivered' - the same exchange RTC publishes to
         await factory.Services.GetRequiredService<IMessageClient>()
             .PublishAsync(new MessageDelivered(message.Id, [_bob], deliveredAt));
 
-        // Assert: consumeren er asynkron - poll receipts-API'et
+        // Assert: the consumer is asynchronous - poll the receipts API
         var receipt = await PollReceiptAsync(alice, chat.Id, message.Id);
         Assert.Equal(_bob, receipt.UserId);
         Assert.Equal(deliveredAt, receipt.DeliveredAt);

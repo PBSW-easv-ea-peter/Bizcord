@@ -3,7 +3,7 @@ using RealTimeCommunicationServer.Realtime;
 
 namespace RealTimeCommunicationServer.Tests;
 
-/// <summary>Husker push i stedet for at sende via SignalR.</summary>
+/// <summary>Records pushes instead of sending them via SignalR.</summary>
 public class FakeClientNotifier : IClientNotifier
 {
     public List<(IReadOnlyList<Guid> UserIds, MessageReceived Message)> Pushes { get; } = [];

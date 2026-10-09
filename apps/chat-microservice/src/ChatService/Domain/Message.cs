@@ -1,13 +1,13 @@
 namespace ChatService.Domain;
 
-/// <summary>Aggregat-rod for en besked. Refererer Chat via id.</summary>
+/// <summary>Aggregate root for a message. References Chat by id.</summary>
 public sealed class Message
 {
     public Guid Id { get; }
     public Guid ChatId { get; }
     public Guid SenderUserId { get; }
 
-    /// <summary>Null, når beskeden er slettet - indholdet gemmes ikke efter sletning.</summary>
+    /// <summary>Null when the message is deleted - the content is not kept after deletion.</summary>
     public MessageContent? Content { get; private set; }
     public DateTimeOffset SentAt { get; }
     public DateTimeOffset? EditedAt { get; private set; }
@@ -35,12 +35,12 @@ public sealed class Message
         return new Message(Guid.CreateVersion7(now), chat.Id, senderUserId, content, now);
     }
 
-    /// <summary>Genopbygning fra persistens - kører ikke oprettelses-invarianter.</summary>
+    /// <summary>Rehydration from persistence - does not run creation invariants.</summary>
     internal static Message Restore(Guid id, Guid chatId, Guid senderUserId, MessageContent? content, DateTimeOffset sentAt,
         DateTimeOffset? editedAt = null, DateTimeOffset? deletedAt = null) =>
         new(id, chatId, senderUserId, content, sentAt, editedAt, deletedAt);
 
-    /// <summary>Kun afsenderen, og kun mens de stadig er aktiv deltager. En slettet besked kan ikke redigeres.</summary>
+    /// <summary>Sender only, and only while they are still an active participant. A deleted message cannot be edited.</summary>
     public void Edit(Chat chat, Guid requestedByUserId, MessageContent content, DateTimeOffset now)
     {
         EnsureSenderCanChange(chat, requestedByUserId, "edit");
@@ -53,8 +53,8 @@ public sealed class Message
     }
 
     /// <summary>
-    /// Blød sletning: beskeden bliver i historikken (så paging og receipts stadig virker), men indholdet fjernes.
-    /// Idempotent - returnerer false, hvis den allerede var slettet.
+    /// Soft delete: the message stays in the history (so paging and receipts still work), but the content is removed.
+    /// Idempotent - returns false if it was already deleted.
     /// </summary>
     public bool Delete(Chat chat, Guid requestedByUserId, DateTimeOffset now)
     {

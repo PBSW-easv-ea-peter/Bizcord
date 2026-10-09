@@ -4,9 +4,9 @@ using EasyNetQ;
 namespace ChatService.Infrastructure.Messaging;
 
 /// <summary>
-/// Erstatter EasyNetQ's standard ("Namespace.Type, Assembly") med logiske event-navne.
-/// EasyNetQ udleder exchange-navn og 'type'-header herfra, og consumeren slår sin egen
-/// C#-type op ud fra headeren - så publisher og consumer behøver ikke dele assembly eller sprog.
+/// Replaces EasyNetQ's default ("Namespace.Type, Assembly") with logical event names.
+/// EasyNetQ derives the exchange name and 'type' header from this, and the consumer looks up its own
+/// C# type from the header - so publisher and consumer need not share an assembly or language.
 /// </summary>
 public sealed class EventTypeNames : ITypeNameSerializer
 {
@@ -30,7 +30,7 @@ public sealed class EventTypeNames : ITypeNameSerializer
         _types = names.ToDictionary(pair => pair.Value, pair => pair.Key);
     }
 
-    // Ukendte typer (fx EasyNetQ's egne) falder tilbage til standarden.
+    // Unknown types (e.g. EasyNetQ's own) fall back to the default.
     public string Serialize(Type type) =>
         _names.TryGetValue(type, out var name) ? name : _fallback.Serialize(type);
 

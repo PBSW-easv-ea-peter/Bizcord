@@ -1,44 +1,44 @@
-# Real-Time Communication Service – kontrakt mod omverdenen
+# Real-Time Communication Service – contract with the outside world
 
-Dette er det, klienter og andre services kan regne med. Alt andet (klasser, presence-implementering) er RTC's egen sag.
-Konventionerne er de samme som ChatService' (camelCase-JSON, UUID-strenge, ISO 8601 i UTC) – se [`apps/chat-context/docs/contracts.md`](../../chat-context/docs/contracts.md).
+This is what clients and other services can rely on. Everything else (classes, presence implementation) is RTC's own business.
+The conventions are the same as ChatService's (camelCase JSON, UUID strings, ISO 8601 in UTC) – see [`apps/chat-microservice/docs/contracts.md`](../../chat-microservice/docs/contracts.md).
 
-## SignalR-hub (klienter)
-| Emne | Regel |
+## SignalR hub (clients)
+| Topic | Rule |
 |---|---|
 | Endpoint | `/hubs/chat?userId={uuid}` |
-| Identitet | `userId` i query (MVP – vi stoler på den ligesom ChatService' `X-User-Id`). Erstattes af et token senere. Uden gyldigt `userId` afvises forbindelsen. |
-| Retning | Kun server → klient. Beskeder sendes via ChatService' REST API, ikke via hubben. |
-| Flere enheder | En bruger kan have flere forbindelser; alle får push. |
+| Identity | `userId` in the query string (MVP – we trust it, just like ChatService's `X-User-Id`). To be replaced by a token later. Without a valid `userId` the connection is rejected. |
+| Direction | Server → client only. Messages are sent via ChatService's REST API, not via the hub. |
+| Multiple devices | A user can have several connections; all of them receive the push. |
 
 ### `MessageReceived`
-Pushes til hver forbundet modtager, når en besked er sendt (fra `chat.message-sent`). Afsenderen får den ikke.
+Pushed to every connected recipient when a message has been sent (from `chat.message-sent`). The sender does not receive it.
 ```json
 { "messageId": "…", "chatId": "…", "senderUserId": "…", "content": "Hej", "sentAt": "2026-10-05T12:00:00+00:00" }
 ```
-Offline modtagere får intet push – de henter beskeden via `GET /chats/{chatId}/messages` hos ChatService.
+Offline recipients get no push – they fetch the message via `GET /chats/{chatId}/messages` on ChatService.
 
 ## Events (RabbitMQ)
-Samme mekanik som ChatService: eget topic-exchange pr. logisk navn, `type`-header med samme navn, `traceparent` videreføres.
+Same mechanics as ChatService: one topic exchange per logical name, a `type` header with the same name, and `traceparent` is propagated.
 
 ### `rtc.message-delivered`
-Beskeden er pushet til mindst én forbundet modtager. `deliveredToUserIds` er kun dem, der var online – ikke alle modtagere.
-Publiceres ikke, hvis ingen modtagere var online.
+The message has been pushed to at least one connected recipient. `deliveredToUserIds` contains only those who were online – not all recipients.
+Not published if no recipients were online.
 ```json
 { "messageId": "…", "chatId": "…", "deliveredToUserIds": ["…"], "deliveredAt": "2026-10-05T12:00:00+00:00" }
 ```
-**Betydning af "delivered":** serveren har sendt beskeden til en forbundet klient. Klienten har ikke kvitteret (der er ingen ack endnu), så en forbindelse, der dør i samme øjeblik, kan give et falsk "delivered".
+**Meaning of "delivered":** the server has sent the message to a connected client. The client has not acknowledged it (there is no ack yet), so a connection that dies at the same moment can produce a false "delivered".
 
-### Leveringsgaranti
-At-most-once, ingen garanteret rækkefølge, consumers skal være tolerante – som hos ChatService.
+### Delivery guarantee
+At-most-once, no guaranteed ordering, consumers must be tolerant – same as ChatService.
 
-### Kendte consumers
-| Consumer | Subscription | Bruger til |
+### Known consumers
+| Consumer | Subscription | Used for |
 |---|---|---|
-| ChatService | `chat-service` | Sætter `deliveredAt` på receipts |
+| ChatService | `chat-service` | Sets `deliveredAt` on receipts |
 
-## Hvad RTC har brug for fra andre
-| Fra | Hvad | Status |
+## What RTC needs from others
+| From | What | Status |
 |---|---|---|
-| ChatService | `chat.message-sent` med `recipientUserIds` og `content` | Leveret – testet i `MessageSentConsumerContractTests` |
-| ChatService | `chat.participant-added`, `chat.messages-seen` | Modtages, men logges kun (push kræver chat-medlemskab i RTC) |
+| ChatService | `chat.message-sent` with `recipientUserIds` and `content` | Delivered – tested in `MessageSentConsumerContractTests` |
+| ChatService | `chat.participant-added`, `chat.messages-seen` | Received, but only logged (push requires chat membership in RTC) |

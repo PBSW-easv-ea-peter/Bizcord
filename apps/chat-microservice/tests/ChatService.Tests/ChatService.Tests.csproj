@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Samme init-scripts som chatDB/compose.yaml - TestDatabase mapper dem ind i Postgres-containeren. -->
+    <!-- Same init scripts as chatDB/compose.yaml - TestDatabase mounts them into the Postgres container. -->
     <None Include="..\..\chatDB\postgres\init\*.sql" Link="db-init\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

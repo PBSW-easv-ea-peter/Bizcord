@@ -4,7 +4,7 @@ using RealTimeCommunicationServer.Contracts;
 namespace RealTimeCommunicationServer.Realtime;
 
 /// <summary>
-/// Abstraktion over push-transporten (samme idé som IMessageClient), så handlers kan testes uden SignalR.
+/// Abstraction over the push transport (same idea as IMessageClient), so handlers can be tested without SignalR.
 /// </summary>
 public interface IClientNotifier
 {
@@ -24,7 +24,7 @@ public class SignalRClientNotifier : IClientNotifier
         _hub = hub;
     }
 
-    // Users(...) rammer alle forbindelser for brugerne - også flere enheder pr. bruger.
+    // Users(...) reaches every connection of the users - including multiple devices per user.
     public Task PushMessageAsync(
         IReadOnlyList<Guid> userIds,
         MessageReceived message,

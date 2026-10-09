@@ -1,5 +1,5 @@
--- PUT/DELETE på beskeder (uge 38, task 03). Blød sletning: content fjernes, rækken bliver,
--- så paging (sent_at, id) og receipts stadig virker.
+-- PUT/DELETE on messages (week 38, task 03). Soft delete: content is removed, the row stays,
+-- so paging (sent_at, id) and receipts still work.
 alter table messages
     alter column content drop not null,
     add column edited_at timestamptz,

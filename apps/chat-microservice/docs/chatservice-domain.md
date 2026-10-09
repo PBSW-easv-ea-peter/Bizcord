@@ -2,7 +2,7 @@
 classDiagram
     direction LR
 
-    %% Aggregat: Chat (rod) + ChatParticipant
+    %% Aggregate: Chat (root) + ChatParticipant
     class Chat {
         +UUID id
         +ChatType type
@@ -25,7 +25,7 @@ classDiagram
         +bool isActive
     }
 
-    %% Aggregat: Message (rod) - refererer Chat via id
+    %% Aggregate: Message (root) - references Chat by id
     class Message {
         +UUID id
         +UUID chatId
@@ -41,8 +41,8 @@ classDiagram
         +Delete(chat, requestedBy, now) bool
     }
 
-    %% Første gang en bruger fik leveret/så en besked - overskrives aldrig
-    %% Identitet: (messageId, userId)
+    %% The first time a user had a message delivered/saw it - never overwritten
+    %% Identity: (messageId, userId)
     class MessageReceipt {
         +UUID messageId
         +UUID userId
@@ -89,13 +89,13 @@ classDiagram
     %% Message --> MessageType (NOT mvp)
 ```
 
-`now`/`at` gives udefra (fra `TimeProvider`), så domænet ikke selv læser uret. `Restore(...)` på hver entitet bruges kun ved genopbygning fra databasen og er udeladt af diagrammet.
+`now`/`at` are passed in from outside (from `TimeProvider`), so the domain never reads the clock itself. `Restore(...)` on each entity is only used when rehydrating from the database and is left out of the diagram.
 
-## Invarianter
-- **Direct:** præcis 2 forskellige brugere, begge `Member`, ingen titel, ingen nye deltagere.
-- **Group:** har en titel. Opretteren bliver `Owner`. Kun `Owner`/`Admin` kan tilføje deltagere. En bruger kan kun være deltager én gang.
-- **Send:** kun aktive deltagere (`leftAt` er tom) kan sende.
-- **Læs:** kun aktive deltagere kan læse chatten, dens beskeder og receipts (`CanRead`, i dag samme regel som `CanSend`).
-- **Edit/Delete:** kun afsenderen, og kun mens de er aktiv deltager. En slettet besked kan ikke redigeres. Sletning er blød: `content` fjernes, og `deletedAt` sættes én gang (gentagen sletning er en no-op).
-- **Receipt:** ingen receipt for afsenderen selv. `deliveredAt` og `seenAt` sættes første gang og overskrives aldrig.
-- **ChatTitle:** trimmet, 1-200 tegn. **MessageContent:** ikke tom, maks. 4000 tegn.
+## Invariants
+- **Direct:** exactly 2 distinct users, both `Member`, no title, no new participants.
+- **Group:** has a title. The creator becomes `Owner`. Only `Owner`/`Admin` can add participants. A user can only be a participant once.
+- **Send:** only active participants (`leftAt` is empty) can send.
+- **Read:** only active participants can read the chat, its messages and receipts (`CanRead`, currently the same rule as `CanSend`).
+- **Edit/Delete:** only the sender, and only while they are an active participant. A deleted message cannot be edited. Deletion is soft: `content` is removed and `deletedAt` is set once (deleting again is a no-op).
+- **Receipt:** no receipt for the sender themselves. `deliveredAt` and `seenAt` are set the first time and never overwritten.
+- **ChatTitle:** trimmed, 1-200 characters. **MessageContent:** not empty, max 4000 characters.

@@ -13,7 +13,7 @@ internal sealed class InMemoryChatRepository : IChatRepository
     public Dictionary<Guid, Chat> Chats { get; } = [];
     public List<ChatParticipant> AddedParticipants { get; } = [];
 
-    /// <summary>Simulerer en samtidig request: gemmes lige før AddAsync, som så giver en konflikt.</summary>
+    /// <summary>Simulates a concurrent request: saved just before AddAsync, which then fails with a conflict.</summary>
     public Chat? RaceWinner { get; set; }
 
     public Task<Chat?> GetAsync(Guid chatId, CancellationToken cancellationToken = default) =>
@@ -65,7 +65,7 @@ internal sealed class InMemoryMessageRepository : IMessageRepository
 
     public List<Message> Updated { get; } = [];
 
-    /// <summary>Simulerer en samtidig sletning: UpdateAsync gemmer intet og returnerer false.</summary>
+    /// <summary>Simulates a concurrent delete: UpdateAsync saves nothing and returns false.</summary>
     public bool LoseUpdateRace { get; set; }
 
     public Task<bool> UpdateAsync(Message message, CancellationToken cancellationToken = default)
@@ -98,11 +98,17 @@ internal sealed class InMemoryMessageClient : IMessageClient
         Published.Add(message!);
         return Task.CompletedTask;
     }
+
+    // No test subscribes through the fake; the consumer is tested against a real broker.
+    public Task SubscribeAsync<T>(string subscriptionId, Func<T, Task> handler) => Task.CompletedTask;
 }
 
 internal sealed class FailingMessageClient : IMessageClient
 {
     public Task PublishAsync<T>(T message, CancellationToken cancellationToken = default) =>
+        throw new InvalidOperationException("Broker is down.");
+
+    public Task SubscribeAsync<T>(string subscriptionId, Func<T, Task> handler) =>
         throw new InvalidOperationException("Broker is down.");
 }
 
@@ -110,7 +116,7 @@ internal sealed class InMemoryReceiptRepository : IReceiptRepository
 {
     public List<(Guid UserId, Message UpTo, DateTimeOffset Now)> MarkSeenCalls { get; } = [];
 
-    /// <summary>Hvad MarkSeenUpToAsync returnerer (antal nyligt markerede).</summary>
+    /// <summary>What MarkSeenUpToAsync returns (number of newly marked).</summary>
     public int MarkedCount { get; set; }
 
     public Task<int> MarkSeenUpToAsync(Guid userId, Message upTo, DateTimeOffset now, CancellationToken cancellationToken = default)

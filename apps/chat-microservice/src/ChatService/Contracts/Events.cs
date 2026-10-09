@@ -1,8 +1,8 @@
 namespace ChatService.Contracts;
 
 /// <summary>
-/// Sprogneutrale event-navne - de er kontrakten, ikke C#-typenavnene.
-/// Bliver både exchange-navn og 'type'-header i RabbitMQ. Se docs/contracts.md.
+/// Language-neutral event names - they are the contract, not the C# type names.
+/// Used as both the exchange name and the 'type' header in RabbitMQ. See docs/contracts.md.
 /// </summary>
 public static class EventNames
 {
@@ -12,7 +12,7 @@ public static class EventNames
     public const string MessageEdited = "chat.message-edited";
     public const string MessageDeleted = "chat.message-deleted";
 
-    /// <summary>Consumes - publiceres af Real-Time Communication Service.</summary>
+    /// <summary>Consumes - published by Real-Time Communication Service.</summary>
     public const string MessageDelivered = "rtc.message-delivered";
 }
 
@@ -31,7 +31,7 @@ public sealed record ParticipantAdded(
     Guid AddedByUserId,
     DateTimeOffset JoinedAt);
 
-/// <summary>Samme modtagere som MessageSent, så RTC kan opdatere klienterne uden at kalde tilbage.</summary>
+/// <summary>Same recipients as MessageSent, so RTC can update the clients without calling back.</summary>
 public sealed record MessageEdited(
     Guid MessageId,
     Guid ChatId,
@@ -39,14 +39,14 @@ public sealed record MessageEdited(
     DateTimeOffset EditedAt,
     IReadOnlyList<Guid> RecipientUserIds);
 
-/// <summary>Uden indhold - det er netop slettet.</summary>
+/// <summary>Without content - it has just been deleted.</summary>
 public sealed record MessageDeleted(
     Guid MessageId,
     Guid ChatId,
     DateTimeOffset DeletedAt,
     IReadOnlyList<Guid> RecipientUserIds);
 
-/// <summary>Én pr. "til og med"-batch: alle andres beskeder til og med UpToMessageId er nu set af UserId.</summary>
+/// <summary>One per "up to and including" batch: all other users' messages up to and including UpToMessageId are now seen by UserId.</summary>
 public sealed record MessagesSeen(
     Guid ChatId,
     Guid UserId,
@@ -54,8 +54,8 @@ public sealed record MessagesSeen(
     DateTimeOffset SeenAt);
 
 /// <summary>
-/// ChatService' egen læsning af RTC's 'rtc.message-delivered' - kun de felter, vi bruger (tolerant reader).
-/// RTC har pushet beskeden til disse brugeres forbundne klienter.
+/// ChatService's own reading of RTC's 'rtc.message-delivered' - only the fields we use (tolerant reader).
+/// RTC has pushed the message to these users' connected clients.
 /// </summary>
 public sealed record MessageDelivered(
     Guid MessageId,
