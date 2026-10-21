@@ -7,7 +7,10 @@
             "DownstreamPathTemplate": "/chats/{type}",
             "DownstreamScheme": "http",
             "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8081 }],
-            "DownstreamHeaderTransform": { "Location": "{DownstreamBaseUrl}, {BaseUrl}" }
+            "DownstreamHeaderTransform": { "Location": "{DownstreamBaseUrl}, {BaseUrl}" },
+            "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+            "RouteClaimsRequirement": { "role": "member" },
+            "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
         },
         {
             "Key": "chat",
@@ -15,7 +18,10 @@
             "UpstreamHttpMethod": ["GET"],
             "DownstreamPathTemplate": "/chats/{chatId}",
             "DownstreamScheme": "http",
-            "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8081 }]
+            "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8081 }],
+            "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+            "RouteClaimsRequirement": { "role": "member" },
+            "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
         },
         {
             "Key": "chat-participants",
@@ -23,7 +29,10 @@
             "UpstreamHttpMethod": ["POST"],
             "DownstreamPathTemplate": "/chats/{chatId}/participants",
             "DownstreamScheme": "http",
-            "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8081 }]
+            "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8081 }],
+            "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+            "RouteClaimsRequirement": { "role": "member" },
+            "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
         },
         {
             "Key": "messages",
@@ -31,7 +40,10 @@
             "UpstreamHttpMethod": ["GET", "POST"],
             "DownstreamPathTemplate": "/chats/{chatId}/messages",
             "DownstreamScheme": "http",
-            "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8081 }]
+            "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8081 }],
+            "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+            "RouteClaimsRequirement": { "role": "member" },
+            "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
         },
         {
             "Key": "chat-message-by-id",
@@ -39,7 +51,10 @@
             "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
             "DownstreamPathTemplate": "/chats/{chatId}/messages/{everything}",
             "DownstreamScheme": "http",
-            "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8081 }]
+            "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8081 }],
+            "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+            "RouteClaimsRequirement": { "role": "member" },
+            "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
         }
     ],
     "Aggregates": [

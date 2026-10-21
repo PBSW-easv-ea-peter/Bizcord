@@ -1,6 +1,6 @@
 # API gateway – design choices (ChatService)
 
-Week 43, task 01: route ChatService through the course's Ocelot API gateway.
+Week 43: route ChatService through the course's Ocelot API gateway (task 01) and protect the routes with JWT authentication and authorization (task 02).
 
 ## Context
 
@@ -81,13 +81,55 @@ RTC pushes notifications to clients over SignalR/WebSockets directly, bypassing 
 
 **Consequence:** RTC is a second entry point into the system and must validate the client's JWT itself. This is relevant for task 02 (authentication), where the gateway alone will not protect RTC.
 
+## Authentication and authorization (task 02)
+
+Every chat route requires a user, so all routes have the same three blocks:
+
+```json
+"AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+"RouteClaimsRequirement": { "role": "member" },
+"AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
+```
+
+Tokens come from the gateway's local faucet (`POST /faucet`). The faucet and signing key are teaching tools and do not verify a real identity.
+
+### 7. Authorization by role, not scopes
+
+**Decision:** All routes require `role: member`.
+
+**Why:** Scopes such as `chat.read` (GET) and `chat.write` (POST/PUT/DELETE) would be more fine-grained, but scopes are set per route. The `messages` route (GET + POST) and the `{everything}` route (all methods) would have to be split by method first. That ties back to choice 4: placeholders make the gateway simpler, but coarser. Scopes are a possible next step.
+
+### 8. User id from the token, not from the client
+
+**Decision:** The gateway sets `X-User-Id` from the token's `sub` claim. ChatService is unchanged and still reads `X-User-Id`.
+
+**Why:** The client can no longer choose who it is. It sends a token, and the gateway derives the identity from it. Keeping the existing header name means the service does not change because of its gateway (same argument as choice 1). `sub` must be a Guid, since ChatService binds the header as `Guid`.
+
+**Verified:** A request with a valid token for user `1111…` **and** a forged `X-User-Id: 2222…` header returns 200. User `2222…` gets 403 on that chat when calling ChatService directly, so the service saw the id from the token. Ocelot overwrites the client's header instead of adding a second value.
+
+**Watch out:** The starter only strips incoming `X-UserId` and `X-Role`, not our `X-User-Id`. We are safe because every route sets the header from the token. A new route without `AddHeadersToRequest` would pass a forged `X-User-Id` straight to ChatService. Alternatives: rename the header in ChatService to `X-UserId`, or strip `X-User-Id` in the gateway as well.
+
+### 9. The aggregate inherits protection from its routes
+
+Ocelot aggregates have no authentication options of their own. Protection is enforced through the routes they combine. We tested it halfway through the rollout, while only `chat` was protected: without a token the whole aggregate returned 401, not a partial response. Today every route in the aggregate is protected, so this does not depend on Ocelot's behaviour for mixed cases.
+
 ## Known limitations
 
 - **Partial failures are hidden by the aggregate.** If one downstream call fails, the client still gets `200` with the error embedded, e.g. `{"chat": {...}, "messages": {"status": 500, ...}}` (Ocelot even uses the reason phrase "cannot return from aggregate.."). If a downstream response has an empty body, the result is invalid JSON: `{"chat":,"messages":}`. Clients must inspect each part.
 - **One invalid route breaks the whole gateway.** Ocelot validates the full configuration at startup and refuses to start on an error (e.g. an aggregate referencing a non-existent route key). Fail-fast is good, but in a shared gateway one team's mistake takes every team's routes down. Ownership and validation of the shared configuration (e.g. in CI) would be needed.
-- **The gateway can be bypassed.** ChatService is still published on port 8081 and trusts `X-User-Id` from anyone. In a real deployment only the gateway should be able to reach the service. Task 02 moves the user id into a validated token.
+- **The gateway can be bypassed.** ChatService is still published on port 8081 and trusts `X-User-Id` from anyone. The JWT locks the front door, but anyone calling `:8081` directly can still claim to be any user. Fixes: run the service only on the internal Docker network with no published port, so only the gateway can reach it, and/or let ChatService validate the JWT itself (defense in depth).
 
 ## Verification
+
+### Running the smoke test
+
+[`gateway-smoke-test.sh`](gateway-smoke-test.sh) runs all checks below against a local setup and prints `PASS`/`FAIL` per check.
+
+1. Start Bizcord: `docker compose up -d --build` in the Bizcord root (ChatService on `:8081`).
+2. Copy [`ocelot.chat.json`](ocelot.chat.json) to `api-gateway/src/Configuration/` and run `docker compose up -d --build` in the gateway clone (`:8080`).
+3. From the Bizcord root: `bash docs/documentation/gateway-smoke-test.sh` (Git Bash on Windows).
+
+The script fetches its own `member` and `guest` tokens from the faucet and creates its own chat and message, so it does not depend on existing data. It exits with the number of failed checks. Override the defaults with `GATEWAY`, `SERVICE` or `USER_ID` if your ports or test user differ.
 
 Tested 2026-10-21 with Docker (gateway, ChatService, Postgres, RabbitMQ). Each endpoint was called directly on `:8081` and through `:8080`, comparing method, path, status and body.
 
@@ -104,6 +146,17 @@ Tested 2026-10-21 with Docker (gateway, ChatService, Postgres, RabbitMQ). Each e
 | `POST /chats/hest` | Rejected by ChatService | ✔ (405) |
 | Missing `X-User-Id` | 400 problem details passed through unchanged | ✔ |
 | Aggregate when the messages call fails | – | 200 with embedded 500 (see limitations) |
+
+Task 02 tests, run 2026-10-21 with faucet tokens (`sub` = test user, `role` = `member` or `guest`):
+
+| Route | No token | Invalid token | `guest` | `member` |
+|---|---|---|---|---|
+| `GET /chats/{chatId}/info` | 401 | 401 | 403 | 200 |
+| `POST /chats/group` | 401 | – | 403 | 201, `Location` on `:8080` |
+| `GET /chats/{chatId}/messages` | 401 | – | 403 | 200 |
+| `PUT .../messages/{messageId}` (`{everything}`) | 401 | – | 403 | 200 |
+| `GET /chats/{chatId}` (aggregate) | 401 | – | 403 | 200, both parts filled |
+| `GET .../info` with `member` + forged `X-User-Id` | | | | 200 as the token's user |
 
 Lessons from testing: always call the service directly first to know which layer fails (a 500 on messages turned out to be an outdated local database schema, not the gateway), and check `docker compose logs` when the gateway returns nothing – it had exited on a configuration error.
 
