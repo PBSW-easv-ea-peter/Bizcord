@@ -27,7 +27,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./apps/chat-microservice/chatDB/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./apps/chat-microservice/chatDB/postgres/init:/docker-entrypoint-initdb.d:Z,ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d chatDB"]
       interval: 2s
@@ -39,9 +39,10 @@ services:
       context: .
       dockerfile: apps/chat-microservice/Dockerfile
     ports:
-      - "8000:8080"
+      - "8081:8081"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8081
       RabbitMq__Host: rabbitmq
       ConnectionStrings__ChatDb: "Host=postgres;Port=5432;Database=chatDB;Username=admin;Password=admin"
     depends_on:
@@ -55,9 +56,10 @@ services:
       context: .
       dockerfile: apps/real-time-communication-microservice/Dockerfile
     ports:
-      - "8080:8080"
+      - "8082:8082"
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8082
+      ASPNETCORE_ENVIRONMENT: Production
       RabbitMq__Host: rabbitmq
     depends_on:
       rabbitmq:
