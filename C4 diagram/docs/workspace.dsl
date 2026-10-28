@@ -24,7 +24,7 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
 
             group "Chat" {
                 chatService = container "ChatService" "Handles direct and group chats: participants, messages (send/edit/delete) and read receipts (delivered/seen). Source of truth via REST." "ASP.NET Core Web API (Dapper, EasyNetQ)" "Service" {
-                    chatsController = component "ChatsController" "REST: POST /chats/direct, POST /chats/group, GET /chats/{id}, POST /chats/{id}/participants. Caller identity from the X-User-Id header (MVP)." "ASP.NET Core Web API Controller"
+                    chatsController = component "ChatsController" "REST: POST /chats/direct, POST /chats/group, GET /chats/{id}, POST /chats/{id}/participants. Caller identity from the X-User-Id header, set by the gateway from the JWT." "ASP.NET Core Web API Controller"
                     chatMessagesController = component "MessagesController" "REST under /chats/{id}/messages: send (POST), page (GET), edit (PUT), delete (DELETE), mark seen (POST .../seen), receipts (GET .../receipts)." "ASP.NET Core Web API Controller"
                     chatAppService = component "ChatAppService" "Use cases for chats: create direct/group chat, get chat, add participant. Publishes chat.participant-added after save." "C# application service"
                     messageAppService = component "MessageAppService" "Use cases for messages and receipts. Saves first, then publishes chat.message-sent/-edited/-deleted and chat.messages-seen. Sets delivered_at from rtc.message-delivered." "C# application service"
@@ -58,22 +58,27 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
                 // realTimeCommunicationDb = container "RealTimeCommunicationDB" "Stores recent notifications (e.g. last 30)." "RDBMS" "Database"
             }
 
+            // The API gateway is shared infrastructure like RabbitMQ - the single REST entry point
+            // for clients, not a bounded context of its own.
+            apiGateway = container "API Gateway" "Single entry point for client REST calls. Validates JWT (Bearer, role: member), sets X-User-Id from the sub claim, routes and aggregates requests." "Ocelot" "Gateway"
+
             // RabbitMQ sits "loose" in the system (not in a group) - it is shared infrastructure across
             // bounded contexts, not itself a context owned by any of the teams.
-            rabbitMq = container "RabbitMQ" "Message broker for event-driven kommunikation mellem microservices - bredere end kun notifikationer." "RabbitMQ" "Message Broker"
+            rabbitMq = container "RabbitMQ" "Message broker for event-driven communication between microservices - broader than just notifications." "RabbitMQ" "Message Broker"
         }
 
         // Relationships
 
         user -> client "Uses"
 
-        client -> userAuthService "Login"
-        userAuthService -> client "Authenticate -> session token"
-
-        client -> userService "manages User"
-        client -> channelService "Interacts with"
-        client -> chatService "REST/JSON (X-User-Id header)"
-        client -> engagementService "Interacts with"
+        // All client REST calls go through the gateway. Only the chat routes exist today;
+        // the others are marked (planned).
+        client -> apiGateway "REST/JSON + JWT Bearer"
+        apiGateway -> userAuthService "Login, returns JWT (planned)"
+        apiGateway -> userService "Manages user (planned)"
+        apiGateway -> channelService "Routes (planned)"
+        apiGateway -> chatService "Routes /chats/* (X-User-Id from JWT sub)"
+        apiGateway -> engagementService "Routes (planned)"
 
         userService -> userAuthService "Validate"
 
@@ -92,12 +97,13 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
         rabbitMq -> realTimeCommunicationService "Deliver: subscribed chat.* events"
         realTimeCommunicationService -> rabbitMq "Publish: rtc.message-delivered"
 
-        client -> realTimeCommunicationService "Connects (SignalR, /hubs/chat)"
+        // RTC bypasses the gateway (long-lived WebSockets), so it must validate the JWT itself.
+        client -> realTimeCommunicationService "Connects (SignalR, /hubs/chat), bypasses gateway"
         realTimeCommunicationService -> client "Push notification"
 
         // Component-level relationships for ChatService
-        client -> chatsController "Create chats, add participants (REST/JSON)"
-        client -> chatMessagesController "Send, read, edit, delete, mark seen (REST/JSON)"
+        apiGateway -> chatsController "Create chats, add participants; GET /chats/{id} as aggregate"
+        apiGateway -> chatMessagesController "Send, read, edit, delete, mark seen"
         chatsController -> chatAppService "Calls"
         chatMessagesController -> messageAppService "Calls"
         chatAppService -> domainModel "Applies rules via"
@@ -165,6 +171,10 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
             element "Event-hub" {
                 shape Hexagon
                 background #d5f5dc
+            }
+            element "Gateway" {
+                shape RoundedBox
+                background #f0b27a
             }
             element "Message Broker" {
                 shape Pipe
