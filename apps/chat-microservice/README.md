@@ -3,6 +3,8 @@
 Handles direct chats and group chats: participants, messages and read receipts.
 Domain model: [docs/chatservice-domain.md](docs/chatservice-domain.md) · Responsibilities and operations: [docs/chatService.md](docs/chatService.md) · **Contract (REST + events): [docs/contracts.md](docs/contracts.md)**
 
+Failure points and reliability measures (week 44): [../../docs/risk-analysis.md](../../docs/risk-analysis.md)
+
 ## Structure
 ```
 chatDB/                  PostgreSQL (compose + init schema)
