@@ -13,8 +13,11 @@ public static class MessagingServiceCollectionExtensions
     public static string RabbitMqConnectionString(this IConfiguration configuration) =>
         configuration.GetConnectionString("RabbitMq") ?? $"host={configuration["RabbitMq:Host"] ?? "localhost"}";
 
+    private static readonly TimeSpan DefaultPublishTimeout = TimeSpan.FromSeconds(2);
+
     /// <summary>EasyNetQ with logical event names and camelCase JSON - see docs/contracts.md.</summary>
-    public static IServiceCollection AddChatMessaging(this IServiceCollection services, string rabbitMqConnectionString, EventTypeNames? typeNames = null)
+    public static IServiceCollection AddChatMessaging(this IServiceCollection services, string rabbitMqConnectionString,
+        EventTypeNames? typeNames = null, TimeSpan? publishTimeout = null)
     {
         services
             .AddEasyNetQ(rabbitMqConnectionString)
@@ -22,7 +25,10 @@ public static class MessagingServiceCollectionExtensions
 
         // Registered after AddEasyNetQ, so it replaces the default serializer.
         services.AddSingleton<ITypeNameSerializer>(typeNames ?? EventTypeNames.ForChatService);
-        services.AddSingleton<IMessageClient, RabbitMqMessageClient>();
+        services.AddSingleton<IMessageClient>(provider => new RabbitMqMessageClient(
+            provider.GetRequiredService<IBus>(),
+            provider.GetRequiredService<IConventions>(),
+            publishTimeout ?? DefaultPublishTimeout));
 
         return services;
     }
