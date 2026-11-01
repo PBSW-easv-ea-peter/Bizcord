@@ -21,7 +21,7 @@ For each component we list its failure modes and their effect, and score:
 | # | Component | Failure mode | Effect | L | S | D | Risk | Mitigation (lowers) | Revised |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | ChatService → RabbitMQ | Publish fails (broker rejects or is down) | Message is saved, but no recipient gets a push. Only visible on refresh. Logged, not alerted. | 3 | 3 | 3 | **27** | Transactional outbox: event is saved with the change and published later (L→1) | **9** |
-| 2 | ChatService → RabbitMQ | Publish *hangs* (`TryPublishAsync` uses `CancellationToken.None`; EasyNetQ retries internally for ~10 s per request when the broker is gone – see the chat-microservice README) | Send requests block, threads pile up, gateway times out, client retries → duplicate messages | 3 | 9 | 3 | **81** | Fail fast: timeout on publish, log + alert on timeout. Client still gets 201, because the message is saved (at-most-once is kept) (S→3, D→1) | **9** |
+| 2 | ChatService → RabbitMQ | Publish *hangs* (`TryPublishAsync` uses `CancellationToken.None`; EasyNetQ retries internally for ~10 s per request when the broker is gone – see the chat-microservice README) | Send requests block, threads pile up, gateway times out, client retries → duplicate messages | 3 | 9 | 3 | **81** | **Done.** Fail fast: `RabbitMqMessageClient` cancels the publish after `RabbitMq:PublishTimeout` (default 2 s) and throws `TimeoutException`; `TryPublishAsync` logs "Publish timed out." as Error. Client still gets 201, because the message is saved (at-most-once is kept) (S→3). Alert on the log line is assumed in the production setup – not configured locally (D→1) | **9** |
 | 3 | RTC | A message handler throws an exception | EasyNetQ moves the message to `EasyNetQ_Default_Error_Queue`. Push is lost silently – nobody watches that queue | 3 | 1 | 9 | **27** | Monitor the error queue depth, alert when > 0 (D→1) | **3** |
 | 4 | RTC | A message crashes the RTC process (poison message) | Message is redelivered on restart → crash loop. RTC is down for all users | 1 | 9 | 3 | **27** | Quorum queue with `x-delivery-limit` + dead-letter queue, so the message is removed after N attempts (S→1) | **3** |
 | 5 | API Gateway | Slow responses from a downstream service | Requests pile up in the gateway and degrade other routes. The `/chats/{chatId}` aggregate is as slow as its slowest call | 3 | 9 | 3 | **81** | Ocelot `QoSOptions` per route: timeout + circuit breaker (S→3) | **27** |
@@ -34,6 +34,7 @@ For each component we list its failure modes and their effect, and score:
 ## Decisions
 
 - **Fail fast over fail quiet (#2).** A hanging publish is a symptom of an underlying problem that we must be able to detect. The publish gets a timeout and an alert, but the request still succeeds: the message is saved, and REST is the source of truth. Returning an error would make the user retry and create a duplicate.
+- **Stopped vs. paused broker (#1, #2).** The test stops the broker, because that is what makes the publish hang. A *paused* broker keeps the TCP connection open, and without publisher confirms the publish may return at once while the event is lost silently. Not tested yet – it belongs to #1 (lost events), not to #2.
 - **Database under pressure (#6).** Reads and writes are equally important in a chat and must both be fast, so there is no obvious traffic to drop. We choose fail fast now (circuit breaker, 503, client retry with idempotency key) and keep a write queue as a future improvement.
 - **Future improvement – write-behind queue (#6).** Writes go to a queue and are saved when the database is ready (queue-based load leveling). The API then answers `202 Accepted`, and the client shows the message as *pending* until it is confirmed. This changes the REST contract (no saved message with id and `SentAt` in the response, no read-your-own-writes), so it is an architectural change, not just a resiliency policy.
 - **Retries.** We add no retries of our own on client calls. EasyNetQ already retries the publish internally (that retry *is* the hang in #2). A retry on publish without an outbox can create duplicate events, and retrying against a database under pressure (#6) only adds load – so retries are only safe behind a circuit breaker and with idempotent operations (idempotency key).
@@ -50,7 +51,7 @@ Highest risk first: #2, #5, #6, #8 (81 each). Candidates for the reliability lab
 
 | # | Simulation |
 |---|---|
-| 2 | `docker pause` the RabbitMQ container and send a message: the request must return within our timeout (not after ~10 s), and an error must be logged. |
+| 2 | `PublishTimeoutTests` (integration): own RabbitMQ container, `StopAsync` after the host has started, then send a message. Asserts 201, response < 5 s and that the message is readable via REST. Without the timeout: 10.1 s (seen failing); with it: ~1 s. |
 | 3, 4 | Publish an event that makes a handler throw / crash; check that it lands in the error queue / DLQ and that the next message is still processed. |
 | 5 | Add an artificial delay in a ChatService endpoint and check that the gateway times out and the circuit opens after N failures. |
 | 6 | Stop or throttle Postgres and check that ChatService answers 503 quickly instead of waiting for the command timeout. |
@@ -58,3 +59,4 @@ Highest risk first: #2, #5, #6, #8 (81 each). Candidates for the reliability lab
 ## Review
 
 - 2026-10-28 – first version (week 44).
+- 2026-11-01 – #2 implemented and tested (timeout on publish, separate log message). D→1 assumes an alert on the log line.
