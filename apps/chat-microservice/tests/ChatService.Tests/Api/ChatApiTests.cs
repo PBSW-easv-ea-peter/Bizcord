@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using ChatService.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Logging;
 
 namespace ChatService.Tests.Api;
 
@@ -70,6 +71,20 @@ public class ChatApiTests(ChatApiFactory factory) : IClassFixture<ChatApiFactory
         var firstChat = await first.Content.ReadFromJsonAsync<ChatResponse>();
         var secondChat = await second.Content.ReadFromJsonAsync<ChatResponse>();
         Assert.Equal(firstChat!.Id, secondChat!.Id);
+    }
+
+    [Fact]
+    public async Task ErrorLog_ContainsTheAffectedIds()
+    {
+        var chatId = Guid.NewGuid();
+
+        var response = await ClientFor(_alice).GetAsync($"/chats/{chatId}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var entry = Assert.Single(factory.HandlerLog.Entries, e => chatId.Equals(e.Payload.GetValueOrDefault("ChatId")));
+        Assert.Equal(LogLevel.Warning, entry.Level);
+        Assert.Equal(_alice, entry.Payload["UserId"]);
+        Assert.Null(entry.Payload["MessageId"]);
     }
 
     [Fact]

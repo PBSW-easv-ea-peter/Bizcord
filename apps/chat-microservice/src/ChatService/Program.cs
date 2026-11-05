@@ -3,20 +3,14 @@ using ChatService.Application;
 using ChatService.Infrastructure.Messaging;
 using ChatService.Infrastructure.Persistence;
 using ChatService.Infrastructure.Web;
-using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Logging: template JSON to stdout (libs/Bizcord.Logging)
 builder.AddBizcordLogging(builder.Configuration["Logging:ServiceName"] ?? "ChatService");
 
-// Persistence
-var chatDbConnectionString = builder.Configuration.GetConnectionString("ChatDb")
-    ?? throw new InvalidOperationException("Connection string 'ChatDb' is missing.");
-builder.Services.AddSingleton(NpgsqlDataSource.Create(chatDbConnectionString));
-builder.Services.AddScoped<IChatRepository, DapperChatRepository>();
-builder.Services.AddScoped<IMessageRepository, DapperMessageRepository>();
-builder.Services.AddScoped<IReceiptRepository, DapperReceiptRepository>();
+// Persistence: short timeouts + circuit breaker (ChatDb)
+builder.Services.AddChatDb(builder.Configuration);
 
 // Messaging
 builder.Services.AddChatMessaging(builder.Configuration.RabbitMqConnectionString());

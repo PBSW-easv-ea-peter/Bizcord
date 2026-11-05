@@ -8,8 +8,8 @@ public class MessageRepositoryTests
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly DapperChatRepository _chats = new(TestDatabase.DataSource);
-    private readonly DapperMessageRepository _messages = new(TestDatabase.DataSource);
+    private readonly DapperChatRepository _chats = new(TestDatabase.Db);
+    private readonly DapperMessageRepository _messages = new(TestDatabase.Db);
 
     [Fact]
     public async Task AddAsync_ThenGetAsync_RoundTripsMessage()
