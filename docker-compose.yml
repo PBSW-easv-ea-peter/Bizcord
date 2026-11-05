@@ -51,6 +51,16 @@ services:
       postgres:
         condition: service_healthy
 
+  # Dev-only: issues any token to anyone (dev/token-issuer/README.md).
+  # Two layers keep it out of production: it only starts with the "dev" profile, and it only listens on loopback.
+  token-issuer:
+    profiles: [dev]
+    build:
+      context: .
+      dockerfile: dev/token-issuer/Dockerfile
+    ports:
+      - "127.0.0.1:8090:8080"
+
   realtimecommunicationserver:
     build:
       context: .

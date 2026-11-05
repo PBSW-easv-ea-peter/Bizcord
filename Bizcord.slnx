@@ -14,6 +14,9 @@
   <Folder Name="/apps/real-time-communication-microservice/tests/">
     <Project Path="apps/real-time-communication-microservice/tests/RealTimeCommunicationServer.Tests/RealTimeCommunicationServer.Tests.csproj" />
   </Folder>
+  <Folder Name="/dev/">
+    <Project Path="dev/token-issuer/TokenIssuer.csproj" />
+  </Folder>
   <Folder Name="/libs/">
     <Project Path="libs/Bizcord.Logging.Tests/Bizcord.Logging.Tests.csproj" />
     <Project Path="libs/Bizcord.Logging/Bizcord.Logging.csproj" />
