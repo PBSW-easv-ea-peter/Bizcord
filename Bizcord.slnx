@@ -1,5 +1,4 @@
 <Solution>
-  <Folder Name="/apps/" />
   <Folder Name="/apps/chat-microservice/" />
   <Folder Name="/apps/chat-microservice/src/">
     <Project Path="apps/chat-microservice/src/ChatService/ChatService.csproj" />
@@ -13,6 +12,11 @@
   </Folder>
   <Folder Name="/apps/real-time-communication-microservice/tests/">
     <Project Path="apps/real-time-communication-microservice/tests/RealTimeCommunicationServer.Tests/RealTimeCommunicationServer.Tests.csproj" />
+  </Folder>
+  <Folder Name="/apps/api-gateway/" />
+  <Folder Name="/apps/api-gateway/src/" >
+    <Project Path="apps/api-gateway/src/OcelotGateway/OcelotGateway.csproj" />
+    <Project Path="apps/api-gateway/src/ApiGateway/api-gateway.csproj" />
   </Folder>
   <Folder Name="/libs/">
     <Project Path="libs/Bizcord.Logging.Tests/Bizcord.Logging.Tests.csproj" />
