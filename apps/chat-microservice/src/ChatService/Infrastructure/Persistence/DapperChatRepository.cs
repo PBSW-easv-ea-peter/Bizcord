@@ -5,49 +5,44 @@ using Npgsql;
 
 namespace ChatService.Infrastructure.Persistence;
 
-public sealed class DapperChatRepository(NpgsqlDataSource dataSource) : IChatRepository
+public sealed class DapperChatRepository(ChatDb db) : IChatRepository
 {
     private const string InsertParticipantSql = """
         insert into chat_participants (id, chat_id, user_id, role, joined_at, left_at)
         values (@Id, @ChatId, @UserId, @Role, @JoinedAt, @LeftAt)
         """;
 
-    public async Task<Chat?> GetAsync(Guid chatId, CancellationToken cancellationToken = default)
-    {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+    public Task<Chat?> GetAsync(Guid chatId, CancellationToken cancellationToken = default) =>
+        db.RunAsync<Chat?>(async connection =>
+        {
+            var chat = await connection.QuerySingleOrDefaultAsync<ChatRow>(new CommandDefinition(
+                "select id, type, title, created_at as CreatedAt from chats where id = @ChatId",
+                new { ChatId = chatId }, cancellationToken: cancellationToken));
 
-        var chat = await connection.QuerySingleOrDefaultAsync<ChatRow>(new CommandDefinition(
-            "select id, type, title, created_at as CreatedAt from chats where id = @ChatId",
-            new { ChatId = chatId }, cancellationToken: cancellationToken));
+            if (chat is null)
+                return null;
 
-        if (chat is null)
-            return null;
+            var participants = await connection.QueryAsync<ParticipantRow>(new CommandDefinition(
+                """
+                select id, user_id as UserId, role, joined_at as JoinedAt, left_at as LeftAt
+                from chat_participants
+                where chat_id = @ChatId
+                """,
+                new { ChatId = chatId }, cancellationToken: cancellationToken));
 
-        var participants = await connection.QueryAsync<ParticipantRow>(new CommandDefinition(
-            """
-            select id, user_id as UserId, role, joined_at as JoinedAt, left_at as LeftAt
-            from chat_participants
-            where chat_id = @ChatId
-            """,
-            new { ChatId = chatId }, cancellationToken: cancellationToken));
-
-        return Chat.Restore(
-            chat.Id,
-            Enum.Parse<ChatType>(chat.Type),
-            chat.Title is null ? null : new ChatTitle(chat.Title),
-            DbTime.FromDb(chat.CreatedAt),
-            participants.Select(ToDomain));
-    }
+            return Chat.Restore(
+                chat.Id,
+                Enum.Parse<ChatType>(chat.Type),
+                chat.Title is null ? null : new ChatTitle(chat.Title),
+                DbTime.FromDb(chat.CreatedAt),
+                participants.Select(ToDomain));
+        }, cancellationToken);
 
     public async Task<Chat?> FindDirectAsync(Guid userA, Guid userB, CancellationToken cancellationToken = default)
     {
-        Guid? chatId;
-        await using (var connection = await dataSource.OpenConnectionAsync(cancellationToken))
-        {
-            chatId = await connection.QuerySingleOrDefaultAsync<Guid?>(new CommandDefinition(
-                "select id from chats where direct_key = @DirectKey",
-                new { DirectKey = DirectKey(userA, userB) }, cancellationToken: cancellationToken));
-        }
+        var chatId = await db.RunAsync(connection => connection.QuerySingleOrDefaultAsync<Guid?>(new CommandDefinition(
+            "select id from chats where direct_key = @DirectKey",
+            new { DirectKey = DirectKey(userA, userB) }, cancellationToken: cancellationToken)), cancellationToken);
 
         return chatId is null ? null : await GetAsync(chatId.Value, cancellationToken);
     }
@@ -59,60 +54,60 @@ public sealed class DapperChatRepository(NpgsqlDataSource dataSource) : IChatRep
         return string.CompareOrdinal(a, b) <= 0 ? $"{a}:{b}" : $"{b}:{a}";
     }
 
-    public async Task AddAsync(Chat chat, CancellationToken cancellationToken = default)
-    {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-
-        try
+    /// <summary>The whole transaction is one call through the breaker - never half a chat.</summary>
+    public Task AddAsync(Chat chat, CancellationToken cancellationToken = default) =>
+        db.RunAsync(async connection =>
         {
-            await connection.ExecuteAsync(new CommandDefinition(
-                """
-                insert into chats (id, type, title, created_at, direct_key)
-                values (@Id, @Type, @Title, @CreatedAt, @DirectKey)
-                """,
-                new
-                {
-                    chat.Id,
-                    Type = chat.Type.ToString(),
-                    Title = chat.Title?.Value,
-                    CreatedAt = DbTime.ToDb(chat.CreatedAt),
-                    DirectKey = chat.Type == ChatType.Direct
-                        ? DirectKey(chat.Participants[0].UserId, chat.Participants[1].UserId)
-                        : null
-                },
-                transaction, cancellationToken: cancellationToken));
-        }
-        catch (PostgresException ex) when (ex.ConstraintName == "uq_chats_direct_key")
-        {
-            // Concurrent creation of the same direct chat - the other request got there first.
-            throw new ConflictException("A direct chat between these users already exists.");
-        }
+            await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
-        foreach (var participant in chat.Participants)
-        {
-            await connection.ExecuteAsync(new CommandDefinition(
-                InsertParticipantSql, ToParameters(chat.Id, participant), transaction, cancellationToken: cancellationToken));
-        }
+            try
+            {
+                await connection.ExecuteAsync(new CommandDefinition(
+                    """
+                    insert into chats (id, type, title, created_at, direct_key)
+                    values (@Id, @Type, @Title, @CreatedAt, @DirectKey)
+                    """,
+                    new
+                    {
+                        chat.Id,
+                        Type = chat.Type.ToString(),
+                        Title = chat.Title?.Value,
+                        CreatedAt = DbTime.ToDb(chat.CreatedAt),
+                        DirectKey = chat.Type == ChatType.Direct
+                            ? DirectKey(chat.Participants[0].UserId, chat.Participants[1].UserId)
+                            : null
+                    },
+                    transaction, cancellationToken: cancellationToken));
+            }
+            catch (PostgresException ex) when (ex.ConstraintName == "uq_chats_direct_key")
+            {
+                // Concurrent creation of the same direct chat - the other request got there first.
+                throw new ConflictException("A direct chat between these users already exists.");
+            }
 
-        await transaction.CommitAsync(cancellationToken);
-    }
+            foreach (var participant in chat.Participants)
+            {
+                await connection.ExecuteAsync(new CommandDefinition(
+                    InsertParticipantSql, ToParameters(chat.Id, participant), transaction, cancellationToken: cancellationToken));
+            }
 
-    public async Task AddParticipantAsync(Guid chatId, ChatParticipant participant, CancellationToken cancellationToken = default)
-    {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }, cancellationToken);
 
-        try
+    public Task AddParticipantAsync(Guid chatId, ChatParticipant participant, CancellationToken cancellationToken = default) =>
+        db.RunAsync(async connection =>
         {
-            await connection.ExecuteAsync(new CommandDefinition(
-                InsertParticipantSql, ToParameters(chatId, participant), cancellationToken: cancellationToken));
-        }
-        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
-        {
-            // Concurrent AddParticipant for the same user - the domain's duplicate check did not see the other one.
-            throw new ConflictException("User is already a participant.");
-        }
-    }
+            try
+            {
+                await connection.ExecuteAsync(new CommandDefinition(
+                    InsertParticipantSql, ToParameters(chatId, participant), cancellationToken: cancellationToken));
+            }
+            catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
+            {
+                // Concurrent AddParticipant for the same user - the domain's duplicate check did not see the other one.
+                throw new ConflictException("User is already a participant.");
+            }
+        }, cancellationToken);
 
     private static object ToParameters(Guid chatId, ChatParticipant participant) => new
     {
