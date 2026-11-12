@@ -13,19 +13,38 @@ public sealed class RabbitMqMessageClient : IMessageClient
 
     private readonly IBus _bus;
     private readonly IConventions _conventions;
+    private readonly TimeSpan _publishTimeout;
 
-    public RabbitMqMessageClient(IBus bus, IConventions conventions)
+    public RabbitMqMessageClient(IBus bus, IConventions conventions, TimeSpan publishTimeout)
     {
         _bus = bus;
         _conventions = conventions;
+        _publishTimeout = publishTimeout;
     }
 
-    public Task PublishAsync<T>(T message, CancellationToken cancellationToken = default) =>
-        _bus.PubSub.PublishAsync(message, configuration =>
+    /// <summary>
+    /// Fails fast instead of waiting for EasyNetQ's own 10 s operation timeout, during which it keeps retrying.
+    /// EasyNetQ honours cancellation, so the publish stops - nothing keeps running in the background.
+    /// </summary>
+    public async Task PublishAsync<T>(T message, CancellationToken cancellationToken = default)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(_publishTimeout);
+
+        try
         {
-            if (Activity.Current?.Id is { } traceParent)
-                configuration.WithHeaders(new Dictionary<string, object> { [TraceParentHeader] = traceParent });
-        }, cancellationToken);
+            await _bus.PubSub.PublishAsync(message, configuration =>
+            {
+                if (Activity.Current?.Id is { } traceParent)
+                    configuration.WithHeaders(new Dictionary<string, object> { [TraceParentHeader] = traceParent });
+            }, timeout.Token);
+        }
+        // Only our own timeout - the caller's cancellation and EasyNetQ's own timeout stay OperationCanceledException.
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException($"Publish did not complete within {_publishTimeout}.");
+        }
+    }
 
     /// <summary>
     /// Same topology as PubSub.SubscribeAsync (EasyNetQ's naming conventions), but via the advanced API,
