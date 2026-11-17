@@ -29,7 +29,7 @@ This task will help to illustrate the benefits of decoupling peripheral concerns
 ### Requirements
 
 1. Configure your microservice to write logs to stdout.
-2. Add a Fluentd sidecar container to your `docker-compose.yml` file.
+2. Add a [Fluentd](https://www.fluentd.org/) sidecar container to your `docker-compose.yml` file.
 3. Fluentd will read logs from stdout and forward them to a central system (console).
 
 ### Example Setup
@@ -75,9 +75,8 @@ This approach requires a bit of configuration to ensure that the sidecar can rea
 
 ## Task: Forward logs to a central system (Optional)
 
-In this task, you'll extend your sidecar to forward logs to a central system. You can follow this article for details about the setup.
+In this task, you'll extend your sidecar to forward logs to a central system. You can follow [this article](https://docs.fluentd.org/container-deployment/docker-compose) for details about the setup.
 
->Linket til artiklen fulgte ikke med i PDF'en – find det på Moodle-siden (Task 01).
 
 # Add a GraphQL Presentation Layer
 
@@ -94,12 +93,12 @@ This task will help enforce the benefits of decoupling **client** concerns from 
 ### Requirements
 
 1. Add a new GraphQL presentation layer to your microservice.
-2. Use HotChocolate to implement the GraphQL API.
+2. Use [HotChocolate](https://chillicream.com/docs/hotchocolate/v15) to implement the GraphQL API.
 3. Reuse your existing service layer to implement the new presentation layer.
 
 ## Example: Define a GraphQL Schema
 
-Using HotChocolate, you can define a GraphQL schema in different ways. The following example shows how to define a schema using implementation-first approach.
+Using [HotChocolate](https://chillicream.com/docs/hotchocolate/v15), you can define a GraphQL schema in different ways. The following example shows how to define a schema using implementation-first approach.
 ```c#
 [QueryType]
 public static class ChannelQuery
@@ -121,8 +120,6 @@ public class ChannelMutation
     }
 }
 ```
-
->Signaturerne er afskåret i PDF'en efter `[Servic`. Ud fra registreringen nedenfor er parameteren formentlig en keyed service, fx `[Service("channelService")] ChannelService channelService)` – tjek originalen på Moodle.
 
 Finally, you can register the GraphQL server, queries, mutations and dependencies like this:
 ```c#
