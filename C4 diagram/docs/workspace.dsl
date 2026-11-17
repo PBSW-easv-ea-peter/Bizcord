@@ -65,6 +65,10 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
             // RabbitMQ sits "loose" in the system (not in a group) - it is shared infrastructure across
             // bounded contexts, not itself a context owned by any of the teams.
             rabbitMq = container "RabbitMQ" "Message broker for event-driven communication between microservices - broader than just notifications." "RabbitMQ" "Message Broker"
+
+            // Shared infrastructure like RabbitMQ. Runs as one node-level agent today (Kubernetes: DaemonSet);
+            // planned to become a per-pod sidecar before Kubernetes (docs/documentation/logging-sidecar.md).
+            logAgent = container "Log Agent" "Collects JSON logs from services that opt in with the label logging=fluentd, parses them into fields and forwards them. Output is its own stdout, standing in for a central log system." "Fluentd" "Log Agent"
         }
 
         // Relationships
@@ -100,6 +104,10 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
         // RTC bypasses the gateway (long-lived WebSockets), so it must validate the JWT itself.
         client -> realTimeCommunicationService "Connects (SignalR, /hubs/chat), bypasses gateway"
         realTimeCommunicationService -> client "Push notification"
+
+        // The services only write to stdout and do not know the agent exists - the agent reads Docker's log files.
+        logAgent -> chatService "Tails stdout logs (Docker json-file)"
+        logAgent -> realTimeCommunicationService "Tails stdout logs (Docker json-file)"
 
         // Component-level relationships for ChatService
         apiGateway -> chatsController "Create chats, add participants; GET /chats/{id} as aggregate"
@@ -179,6 +187,10 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
             element "Message Broker" {
                 shape Pipe
                 background #f5d76e
+            }
+            element "Log Agent" {
+                shape Component
+                background #d7dbdd
             }
         }
     }
