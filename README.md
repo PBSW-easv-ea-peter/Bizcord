@@ -31,8 +31,11 @@ En ny service melder sig til ved at tilføje dette i docker-compose.yml:
       driver: json-file
       options:
         labels: logging
-
-      options:
-        labels: logging
 ```
 Konfiguration: fluentd/fluent.conf. Designvalg: docs/documentation/logging-sidecar.md
+
+GraphQL (ChatService)
+
+ChatService har et GraphQL-lag ved siden af REST, bygget på de samme application services. Åbn http://localhost:8081/graphql i browseren for at få Nitro (GraphQL IDE). Kald kræver headeren `X-User-Id`, ligesom REST.
+
+Test-guide med header, testdata, queries og variables samt designvalg: [docs/documentation/graphql.md](docs/documentation/graphql.md)

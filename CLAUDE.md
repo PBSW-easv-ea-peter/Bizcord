@@ -13,7 +13,7 @@
 
 ## Running and testing
 - Tests: `dotnet test Bizcord.slnx`. Only Docker needs to run – Postgres and RabbitMQ are started by Testcontainers.
-- Full stack: `docker compose up -d --build` from the repo root (ChatService :8000, RTC :8080, RabbitMQ UI :15672).
+- Full stack: `docker compose up -d --build` from the repo root (ChatService :8081, RTC :8080, RabbitMQ UI :15672).
   After a failed RabbitMQ start, add `--renew-anon-volumes`.
 - Don't run the compose files under `apps/` at the same time as the root compose (same ports).
 

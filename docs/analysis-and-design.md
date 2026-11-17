@@ -127,7 +127,7 @@ dotnet test Bizcord.slnx       # Postgres and RabbitMQ are started by Testcontai
 
 | What | Where |
 | --- | --- |
-| ChatService API (Swagger) | http://localhost:8000/swagger |
+| ChatService API (Swagger) | http://localhost:8081/swagger |
 | RTC (SignalR hub) | http://localhost:8080/hubs/chat?userId={uuid} |
 | RabbitMQ management | http://localhost:15672 (guest/guest) |
 | Manual requests | [`ChatService.http`](../apps/chat-microservice/src/ChatService/ChatService.http) |
