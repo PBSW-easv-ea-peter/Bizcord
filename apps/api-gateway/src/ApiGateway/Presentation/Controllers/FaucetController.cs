@@ -1,7 +1,7 @@
-using Bizcord.ApiGateway.Services;
+using Bizcord.ApiGateway.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Bizcord.ApiGateway.Controllers;
+namespace Bizcord.ApiGateway.Presentation.Controllers;
 
 [ApiController]
 [Route("[controller]")]

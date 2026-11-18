@@ -1,26 +1,6 @@
 {
   "Routes": [
     {
-      "Key": "swagger-ui",
-      "UpstreamPathTemplate": "/chat-swagger/{everything}",
-      "UpstreamHttpMethod": ["GET"],
-      "DownstreamPathTemplate": "/swagger/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
-      "AuthenticationOptions": { "AuthenticationProviderKeys": [], "AllowedScopes": [] },
-      "RouteClaimsRequirement": {}
-    },
-    {
-      "Key": "openapi-spec",
-      "UpstreamPathTemplate": "/chat-openapi/{everything}",
-      "UpstreamHttpMethod": ["GET"],
-      "DownstreamPathTemplate": "/openapi/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
-      "AuthenticationOptions": { "AuthenticationProviderKeys": [], "AllowedScopes": [] },
-      "RouteClaimsRequirement": {}
-    },
-    {
       "Key": "chats-create",
       "UpstreamPathTemplate": "/chats/{type}",
       "UpstreamHttpMethod": ["POST"],
@@ -97,6 +77,17 @@
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
+    },
+    {
+      "Key": "health",
+      "UpstreamPathTemplate": "/chat/health",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8081 }]
+//      "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+//      "RouteClaimsRequirement": { "role": "member" },
+//      "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
     }
   ],
   "Aggregates": [

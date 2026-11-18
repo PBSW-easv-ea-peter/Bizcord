@@ -4,7 +4,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Bizcord.ApiGateway.Services;
+namespace Bizcord.ApiGateway.Application.Services;
 
 
 public class CreateTokenOptions
@@ -14,16 +14,16 @@ public class CreateTokenOptions
 
 public class JwtTokenService
 {
-    private readonly string AuthenticationProviderKey;
+    private readonly JwtOptions _options;
 
-    public JwtTokenService(string authenticationProviderKey)
+    public JwtTokenService(JwtOptions options)
     {
-        AuthenticationProviderKey = authenticationProviderKey;
+        _options = options;
     }
 
     public AuthenticationToken CreateToken(CreateTokenOptions options)
     {
-        var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AuthenticationProviderKey));
+        var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.AuthenticationProviderKey));
         var signingCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>();
@@ -38,9 +38,11 @@ public class JwtTokenService
         }
 
         var tokenOptions = new JwtSecurityToken(
-            signingCredentials: signingCredentials,
-            expires: DateTime.UtcNow.AddHours(1),
-            claims: claims
+            issuer: _options.Issuer,
+            audience: _options.Audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(_options.ExpiryHours),
+            signingCredentials: signingCredentials
         );
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(tokenOptions);

@@ -1,6 +1,7 @@
 using System.Text;
-using Bizcord.ApiGateway.Services;
+using Bizcord.ApiGateway.Application.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
 
@@ -8,38 +9,55 @@ namespace Bizcord.ApiGateway.Extensions;
 
 public static class ServiceExtensions
 {
-    public static IServiceCollection AddJwtTokenService(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddJwtTokenService(this IServiceCollection services)
     {
-        services.AddSingleton(new JwtTokenService(GetSigningKey(configuration)));
+        services.AddSingleton<JwtTokenService>(provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<JwtOptions>>().Value;
+            return new JwtTokenService(options);
+        });
         return services;
     }
 
-    public static IServiceCollection AddApiGatewayServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddApiGatewayServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        var signingKey = GetSigningKey(configuration);
+        var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>()
+                         ?? throw new InvalidOperationException("Jwt configuration is required.");
+
+        var signingKey = jwtOptions.AuthenticationProviderKey;
+
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
-                // Preserve sub, role and scope for Ocelot's claim lookups.
                 options.MapInboundClaims = false;
+
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtOptions.Issuer,
+
+                    ValidateAudience = true,
+                    ValidAudience = jwtOptions.Audience,
+
                     ValidateLifetime = true,
+
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)),
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(signingKey)),
+
                     NameClaimType = "sub",
                     RoleClaimType = "role",
+
                     ClockSkew = TimeSpan.Zero
                 };
             });
+
         services.AddAuthorization();
+
         services.AddOcelot(configuration);
+
         return services;
     }
-
-    private static string GetSigningKey(IConfiguration configuration) =>
-        configuration["AuthenticationProviderKey"]
-        ?? throw new InvalidOperationException("AuthenticationProviderKey is required.");
 }
