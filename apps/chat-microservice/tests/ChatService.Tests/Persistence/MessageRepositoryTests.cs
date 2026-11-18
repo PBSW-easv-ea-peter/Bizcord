@@ -27,6 +27,42 @@ public class MessageRepositoryTests
         Assert.Equal(sender, loaded.SenderUserId);
         Assert.Equal(new MessageContent("Hej"), loaded.Content);
         Assert.Equal(Now, loaded.SentAt);
+        Assert.Null(loaded.Attachment);
+    }
+
+    [Fact]
+    public async Task AddAsync_WithAttachmentAndNoText_RoundTrips()
+    {
+        var sender = Guid.NewGuid();
+        var chat = Chat.CreateDirect(sender, Guid.NewGuid(), Now);
+        await _chats.AddAsync(chat);
+        var attachment = new Attachment(Guid.NewGuid(), "video.mp4", 15_000_000);
+        var message = Message.SendWithAttachment(chat, sender, null, attachment, Now);
+
+        await _messages.AddAsync(message);
+        var loaded = await _messages.GetAsync(message.Id);
+
+        Assert.NotNull(loaded);
+        Assert.Null(loaded.Content);
+        Assert.Equal(attachment, loaded.Attachment);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_DeletingMessageWithAttachment_RemovesTheReference()
+    {
+        var sender = Guid.NewGuid();
+        var chat = Chat.CreateDirect(sender, Guid.NewGuid(), Now);
+        await _chats.AddAsync(chat);
+        var message = Message.SendWithAttachment(chat, sender, new MessageContent("Report"), new Attachment(Guid.NewGuid(), "report.pdf", 42), Now);
+        await _messages.AddAsync(message);
+
+        message.Delete(chat, sender, Now);
+        Assert.True(await _messages.UpdateAsync(message));
+
+        var loaded = await _messages.GetAsync(message.Id);
+        Assert.NotNull(loaded);
+        Assert.True(loaded.IsDeleted);
+        Assert.Null(loaded.Attachment);
     }
 
     [Fact]
