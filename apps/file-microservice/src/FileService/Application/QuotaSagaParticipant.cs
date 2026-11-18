@@ -11,7 +11,9 @@ public sealed class QuotaSagaParticipant(
     IFileRepository files,
     IMessageClient messageClient,
     QuotaSettings settings,
-    ILogger<QuotaSagaParticipant> logger)
+    ILogger<QuotaSagaParticipant> logger) :
+    IMessageHandler<ReserveQuota>,
+    IMessageHandler<ReleaseQuota>
 {
     public async Task HandleAsync(ReserveQuota command, CancellationToken cancellationToken = default)
     {

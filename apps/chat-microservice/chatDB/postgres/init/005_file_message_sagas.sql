@@ -15,6 +15,8 @@ create table file_message_sagas (
     compensation_attempts int not null default 0,
     started_at timestamptz not null,
     updated_at timestamptz not null,
+    -- When the saga reached an end state (Completed, Failed, CompensationFailed). Null while it is running.
+    completed_at timestamptz,
 
     constraint fk_file_message_sagas_chat
         foreign key (chat_id)

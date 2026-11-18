@@ -20,7 +20,10 @@ public sealed class FileMessageSagaOrchestrator(
     IFileMessageSagaRepository sagas,
     IMessageClient messageClient,
     TimeProvider time,
-    ILogger<FileMessageSagaOrchestrator> logger)
+    ILogger<FileMessageSagaOrchestrator> logger) :
+    IMessageHandler<QuotaReserved>,
+    IMessageHandler<QuotaRejected>,
+    IMessageHandler<QuotaReleased>
 {
     public async Task<FileMessageSaga> StartAsync(Guid chatId, Guid senderUserId, Guid fileId, string? content, CancellationToken cancellationToken = default)
     {

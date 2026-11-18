@@ -20,6 +20,7 @@ public class FileMessageSagaTests
 
         Assert.Equal(FileMessageSagaStatus.AwaitingQuota, saga.Status);
         Assert.False(saga.IsFinished);
+        Assert.Null(saga.CompletedAt);
     }
 
     [Fact]
@@ -39,6 +40,7 @@ public class FileMessageSagaTests
         saga.Complete(messageId, Now);
 
         Assert.Equal(FileMessageSagaStatus.Completed, saga.Status);
+        Assert.Equal(Now, saga.CompletedAt);
         Assert.Equal(messageId, saga.MessageId);
         Assert.True(saga.IsFinished);
     }
@@ -51,6 +53,7 @@ public class FileMessageSagaTests
         saga.Reject("Storage quota exceeded.", Now);
 
         Assert.Equal(FileMessageSagaStatus.Failed, saga.Status);
+        Assert.Equal(Now, saga.CompletedAt);
         Assert.Equal("Storage quota exceeded.", saga.FailureReason);
     }
 
@@ -63,6 +66,7 @@ public class FileMessageSagaTests
         saga.CompleteCompensation(Now);
 
         Assert.Equal(FileMessageSagaStatus.Failed, saga.Status);
+        Assert.Equal(Now, saga.CompletedAt);
     }
 
     [Fact]
@@ -76,6 +80,7 @@ public class FileMessageSagaTests
         Assert.False(saga.RetryCompensation(Now));
 
         Assert.Equal(FileMessageSagaStatus.CompensationFailed, saga.Status);
+        Assert.Equal(Now, saga.CompletedAt);
         Assert.Equal(FileMessageSaga.MaxCompensationAttempts, saga.CompensationAttempts);
     }
 

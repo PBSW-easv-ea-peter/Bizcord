@@ -47,6 +47,71 @@ sequenceDiagram
 
 The timeout path was tested end-to-end by stopping FileService mid-saga: the saga went to `Compensating`. When FileService came back, it processed the queued reserve **and** release, and the late `quota-reserved` triggered one more (no-op) release. The quota ended where it started.
 
+#### Failure path A: quota exceeded (the scenario) - nothing to compensate
+
+```mermaid
+sequenceDiagram
+    actor Charlie
+    participant Chat as ChatService (orchestrator)
+    participant File as FileService
+
+    Charlie->>Chat: POST .../file-messages { fileId }
+    Chat->>Chat: saga AwaitingQuota
+    Chat-->>Charlie: 202 Accepted
+    Chat-)File: file.reserve-quota
+    File->>File: used + size > limit<br/>→ delete the temporary file (step 1 undone locally, same transaction)
+    File-)Chat: file.quota-rejected { reason }
+    Chat->>Chat: saga Failed (reason: "...Upgrade to Premium")
+    Note over Chat: No message was saved,<br/>no quota was deducted - nothing to compensate
+    Charlie->>Chat: GET .../file-messages/{sagaId}
+    Chat-->>Charlie: Failed + reason
+```
+
+#### Failure path B: the message can't be saved - compensate step 2
+
+```mermaid
+sequenceDiagram
+    actor Alice
+    participant Chat as ChatService (orchestrator)
+    participant File as FileService
+
+    Alice->>Chat: POST .../file-messages { fileId }
+    Chat-)File: file.reserve-quota
+    File->>File: deduct quota, file Attached
+    File-)Chat: file.quota-reserved
+    Chat->>Chat: save message → not allowed<br/>(chat gone / sender no longer a participant)
+    Chat->>Chat: saga Compensating
+    Chat-)File: file.release-quota (compensation)
+    File->>File: restore quota + delete file (one transaction)
+    File-)Chat: file.quota-released
+    Chat->>Chat: saga Failed
+    Note over Chat,File: Nobody saw a message, the quota is back where it started
+```
+
+#### Failure path C: no answer - timeout, late reply, and a compensation that fails
+
+```mermaid
+sequenceDiagram
+    participant Chat as ChatService (orchestrator)
+    participant Job as Timeout job (in ChatService)
+    participant File as FileService (down)
+
+    Chat-)File: file.reserve-quota
+    Note over File: FileService is down - nothing comes back
+    Job->>Chat: 2 minutes without an answer
+    Chat->>Chat: saga Compensating
+    Chat-)File: file.release-quota (attempt 1)
+    Note over File: FileService comes back:<br/>reserve (deducts) → release (gives back)
+    File-)Chat: file.quota-reserved (late)
+    Chat-)File: file.release-quota again (idempotent: "nothing to release")
+    File-)Chat: file.quota-released
+    Chat->>Chat: saga Failed
+
+    Note over Job,File: If release-quota never gets an answer:
+    Job->>Chat: retry release-quota (attempts 2 and 3)
+    Job->>Chat: give up → saga CompensationFailed + Error log for an operator
+```
+
 ## Steps (the assignment's template)
 
 ```
@@ -88,13 +153,13 @@ Every message carries `sagaId` - that is how a reply is matched to its saga inst
 | `file.release-quota` | Command (compensation) | ChatService → FileService | `sagaId`, `fileId`, `userId` |
 | `file.quota-released` | Event | FileService → ChatService | `sagaId`, `fileId`, `userId` |
 
-**Deviation from the assignment:** it says to define the messages in a shared `Shared.Contracts` project. We don't share code between services (see `CLAUDE.md` and ChatService's "Our answer to week 38, Task 02"), so each service has its own records and the contract is the documented JSON - tested from both sides (`FileSagaContractTests` in ChatService, `ContractTests` in FileService).
+**Deviation from the assignment (open - we have asked the teacher):** it says to define the messages in a shared `Shared.Contracts` project. We don't share code between services (see `CLAUDE.md` and ChatService's "Our answer to week 38, Task 02"), so each service has its own records and the contract is the documented JSON - tested from both sides (`FileSagaContractTests` in ChatService, `ContractTests` in FileService).
 
 ## Saga state
 
 Lives in **ChatDB**, table `file_message_sagas` (domain class `FileMessageSaga`, repository `IFileMessageSagaRepository`):
 
-`sagaId`, `chatId`, `senderUserId`, `fileId`, `content` (the text to send once the file is accepted), `status`, `messageId`, `failureReason`, `compensationAttempts`, `startedAt`, `updatedAt`.
+`sagaId`, `chatId`, `senderUserId`, `fileId`, `content` (the text to send once the file is accepted), `status`, `messageId`, `failureReason`, `compensationAttempts`, `startedAt`, `updatedAt` (last change - the timeout job compares with it), `completedAt` (set when the saga reaches an end state).
 
 ```
 AwaitingQuota ──quota-reserved + message saved──▶ Completed
@@ -114,7 +179,7 @@ The status is used instead of the assignment's booleans (`PaymentProcessed`, `Is
 
 ## Why orchestration?
 
-**ChatService orchestrates.** "Send a message" is ChatService's business transaction - FileService is a participant that answers yes or no to a command and knows nothing about the next step (`QuotaSagaParticipant`). The whole flow, including every compensation, can be read in one class: `FileMessageSagaOrchestrator`.
+**ChatService orchestrates.** "Send a message" is ChatService's business transaction - FileService is a participant that answers yes or no to a command and knows nothing about the next step (`QuotaSagaParticipant`). The whole flow, including every compensation, can be read in one class: `FileMessageSagaOrchestrator`. As in the assignment's Option A, it is one handler that receives every message in the saga - it implements `IMessageHandler<QuotaReserved>`, `IMessageHandler<QuotaRejected>` and `IMessageHandler<QuotaReleased>`. The saga is started by the HTTP call instead of an `InitiatePurchase`-style message, because the user is waiting for a 202 with the saga id.
 
 **What would be harder with choreography:**
 - **Timeouts have no owner.** Our delivery is at-most-once - a lost `quota-reserved` would leave a saga hanging forever, and with choreography no service is responsible for noticing. The orchestrator has the state, so it can time out and compensate.

@@ -10,13 +10,13 @@ public sealed class DapperFileMessageSagaRepository(NpgsqlDataSource dataSource)
     private const string SelectColumns =
         "select saga_id as SagaId, chat_id as ChatId, sender_user_id as SenderUserId, file_id as FileId, content, status, " +
         "message_id as MessageId, failure_reason as FailureReason, compensation_attempts as CompensationAttempts, " +
-        "started_at as StartedAt, updated_at as UpdatedAt from file_message_sagas";
+        "started_at as StartedAt, updated_at as UpdatedAt, completed_at as CompletedAt from file_message_sagas";
 
     private const string UpdateSql =
         """
         update file_message_sagas
         set status = @Status, message_id = @MessageId, failure_reason = @FailureReason,
-            compensation_attempts = @CompensationAttempts, updated_at = @UpdatedAt
+            compensation_attempts = @CompensationAttempts, updated_at = @UpdatedAt, completed_at = @CompletedAt
         where saga_id = @SagaId and status = @ExpectedStatus
         """;
 
@@ -38,9 +38,9 @@ public sealed class DapperFileMessageSagaRepository(NpgsqlDataSource dataSource)
         await connection.ExecuteAsync(new CommandDefinition(
             """
             insert into file_message_sagas (saga_id, chat_id, sender_user_id, file_id, content, status,
-                                            message_id, failure_reason, compensation_attempts, started_at, updated_at)
+                                            message_id, failure_reason, compensation_attempts, started_at, updated_at, completed_at)
             values (@SagaId, @ChatId, @SenderUserId, @FileId, @Content, @Status,
-                    @MessageId, @FailureReason, @CompensationAttempts, @StartedAt, @UpdatedAt)
+                    @MessageId, @FailureReason, @CompensationAttempts, @StartedAt, @UpdatedAt, @CompletedAt)
             """,
             new
             {
@@ -54,7 +54,8 @@ public sealed class DapperFileMessageSagaRepository(NpgsqlDataSource dataSource)
                 saga.FailureReason,
                 saga.CompensationAttempts,
                 StartedAt = DbTime.ToDb(saga.StartedAt),
-                UpdatedAt = DbTime.ToDb(saga.UpdatedAt)
+                UpdatedAt = DbTime.ToDb(saga.UpdatedAt),
+                CompletedAt = DbTime.ToDb(saga.CompletedAt)
             },
             cancellationToken: cancellationToken));
     }
@@ -114,6 +115,7 @@ public sealed class DapperFileMessageSagaRepository(NpgsqlDataSource dataSource)
         saga.FailureReason,
         saga.CompensationAttempts,
         UpdatedAt = DbTime.ToDb(saga.UpdatedAt),
+        CompletedAt = DbTime.ToDb(saga.CompletedAt),
         ExpectedStatus = expectedStatus.ToString()
     };
 
@@ -128,7 +130,8 @@ public sealed class DapperFileMessageSagaRepository(NpgsqlDataSource dataSource)
         row.FailureReason,
         row.CompensationAttempts,
         DbTime.FromDb(row.StartedAt),
-        DbTime.FromDb(row.UpdatedAt));
+        DbTime.FromDb(row.UpdatedAt),
+        DbTime.FromDb(row.CompletedAt));
 
     private sealed class SagaRow
     {
@@ -143,5 +146,6 @@ public sealed class DapperFileMessageSagaRepository(NpgsqlDataSource dataSource)
         public int CompensationAttempts { get; init; }
         public DateTime StartedAt { get; init; }
         public DateTime UpdatedAt { get; init; }
+        public DateTime? CompletedAt { get; init; }
     }
 }

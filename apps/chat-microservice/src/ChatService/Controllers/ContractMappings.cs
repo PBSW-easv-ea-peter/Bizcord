@@ -38,7 +38,8 @@ internal static class ContractMappings
         saga.Status.ToString(),
         saga.MessageId,
         saga.FailureReason,
-        saga.StartedAt);
+        saga.StartedAt,
+        saga.CompletedAt);
 
     public static ReceiptResponse ToResponse(this MessageReceipt receipt) => new(
         receipt.UserId,
