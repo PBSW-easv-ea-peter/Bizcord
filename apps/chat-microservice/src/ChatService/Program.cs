@@ -17,15 +17,19 @@ builder.Services.AddSingleton(NpgsqlDataSource.Create(chatDbConnectionString));
 builder.Services.AddScoped<IChatRepository, DapperChatRepository>();
 builder.Services.AddScoped<IMessageRepository, DapperMessageRepository>();
 builder.Services.AddScoped<IReceiptRepository, DapperReceiptRepository>();
+builder.Services.AddScoped<IFileMessageSagaRepository, DapperFileMessageSagaRepository>();
 
 // Messaging
 builder.Services.AddChatMessaging(builder.Configuration.RabbitMqConnectionString());
 builder.Services.AddHostedService<MessageDeliveredConsumer>();
+builder.Services.AddHostedService<FileSagaReplyConsumer>();
+builder.Services.AddHostedService<FileSagaTimeoutService>();
 
 // Application
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ChatAppService>();
 builder.Services.AddScoped<MessageAppService>();
+builder.Services.AddScoped<FileMessageSagaOrchestrator>();
 
 // OpenAPI
 builder.Services.AddOpenApi();

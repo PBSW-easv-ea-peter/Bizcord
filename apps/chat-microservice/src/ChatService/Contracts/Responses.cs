@@ -31,6 +31,19 @@ public sealed record AttachmentResponse(
     string FileName,
     long SizeBytes);
 
+/// <summary>
+/// Status of a "send message with file" saga. Status is AwaitingQuota, Completed, Compensating, Failed or CompensationFailed.
+/// MessageId is set when Completed, Reason when it failed.
+/// </summary>
+public sealed record FileMessageResponse(
+    Guid SagaId,
+    Guid ChatId,
+    Guid FileId,
+    string Status,
+    Guid? MessageId,
+    string? Reason,
+    DateTimeOffset StartedAt);
+
 public sealed record ReceiptResponse(
     Guid UserId,
     DateTimeOffset? DeliveredAt,
