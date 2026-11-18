@@ -1,5 +1,6 @@
 using Bizcord.Logging;
 using ChatService.Application;
+using ChatService.Contracts;
 using ChatService.Infrastructure.Messaging;
 using ChatService.Infrastructure.Persistence;
 using ChatService.Infrastructure.Web;
@@ -30,6 +31,10 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ChatAppService>();
 builder.Services.AddScoped<MessageAppService>();
 builder.Services.AddScoped<FileMessageSagaOrchestrator>();
+// The orchestrator is the handler for every reply in the saga - same instance per scope.
+builder.Services.AddScoped<IMessageHandler<QuotaReserved>>(sp => sp.GetRequiredService<FileMessageSagaOrchestrator>());
+builder.Services.AddScoped<IMessageHandler<QuotaRejected>>(sp => sp.GetRequiredService<FileMessageSagaOrchestrator>());
+builder.Services.AddScoped<IMessageHandler<QuotaReleased>>(sp => sp.GetRequiredService<FileMessageSagaOrchestrator>());
 
 // OpenAPI
 builder.Services.AddOpenApi();

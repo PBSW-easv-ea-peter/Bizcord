@@ -12,7 +12,7 @@ public sealed class ChatEventConsumer(IMessageClient messageClient, IServiceScop
             async message =>
             {
                 await using var scope = scopeFactory.CreateAsyncScope();
-                await scope.ServiceProvider.GetRequiredService<MessageDeletedHandler>().HandleAsync(message, cancellationToken);
+                await scope.ServiceProvider.GetRequiredService<IMessageHandler<MessageDeleted>>().HandleAsync(message, cancellationToken);
             });
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

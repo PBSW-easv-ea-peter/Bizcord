@@ -8,7 +8,7 @@ namespace FileService.Application;
 /// a deletion can't be refused, so there is nothing to compensate - we just react to the event.
 /// If the event is lost (at-most-once), the space stays used. We accept that.
 /// </summary>
-public sealed class MessageDeletedHandler(IFileRepository files, ILogger<MessageDeletedHandler> logger)
+public sealed class MessageDeletedHandler(IFileRepository files, ILogger<MessageDeletedHandler> logger) : IMessageHandler<MessageDeleted>
 {
     public async Task HandleAsync(MessageDeleted message, CancellationToken cancellationToken = default)
     {

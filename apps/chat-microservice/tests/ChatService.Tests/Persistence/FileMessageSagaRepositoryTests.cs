@@ -50,7 +50,9 @@ public class FileMessageSagaRepositoryTests
         Assert.NotNull(loadedMessage);
         Assert.Null(loadedMessage.Content);
         Assert.Equal(new Attachment(saga.FileId, "video.mp4", 42), loadedMessage.Attachment);
-        Assert.Equal(FileMessageSagaStatus.Completed, (await _sagas.GetAsync(saga.SagaId))!.Status);
+        var loadedSaga = (await _sagas.GetAsync(saga.SagaId))!;
+        Assert.Equal(FileMessageSagaStatus.Completed, loadedSaga.Status);
+        Assert.Equal(Now, loadedSaga.CompletedAt);
     }
 
     [Fact]
