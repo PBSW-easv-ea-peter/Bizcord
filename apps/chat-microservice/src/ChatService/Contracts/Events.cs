@@ -64,12 +64,16 @@ public sealed record MessageEdited(
     DateTimeOffset EditedAt,
     IReadOnlyList<Guid> RecipientUserIds);
 
-/// <summary>Without content - it has just been deleted.</summary>
+/// <summary>
+/// Without content - it has just been deleted. AttachmentFileId is set when the message had a file,
+/// so FileService can delete it and give the quota back.
+/// </summary>
 public sealed record MessageDeleted(
     Guid MessageId,
     Guid ChatId,
     DateTimeOffset DeletedAt,
-    IReadOnlyList<Guid> RecipientUserIds);
+    IReadOnlyList<Guid> RecipientUserIds,
+    Guid? AttachmentFileId = null);
 
 /// <summary>One per "up to and including" batch: all other users' messages up to and including UpToMessageId are now seen by UserId.</summary>
 public sealed record MessagesSeen(

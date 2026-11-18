@@ -19,12 +19,14 @@ builder.Services.AddScoped<IFileRepository, DapperFileRepository>();
 // Messaging
 builder.Services.AddFileMessaging(builder.Configuration.RabbitMqConnectionString());
 builder.Services.AddHostedService<QuotaCommandConsumer>();
+builder.Services.AddHostedService<ChatEventConsumer>();
 
 // Application
 builder.Services.AddSingleton(builder.Configuration.GetSection("Quota").Get<QuotaSettings>() ?? new QuotaSettings());
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<FileAppService>();
 builder.Services.AddScoped<QuotaSagaParticipant>();
+builder.Services.AddScoped<MessageDeletedHandler>();
 
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();

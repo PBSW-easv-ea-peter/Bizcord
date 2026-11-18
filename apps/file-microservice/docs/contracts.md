@@ -52,6 +52,10 @@ Nothing was reserved. If the reason is the quota, the temporary file has already
 { "sagaId": "…", "fileId": "…", "userId": "…" }
 ```
 
+### Events FileService consumes from others
+#### `chat.message-deleted` (from ChatService)
+When `attachmentFileId` is set, FileService deletes that file and gives its size back to the owner's quota, in one local transaction. Only `Attached` files are touched (a `Temporary` file belongs to a running saga). Idempotent. This is **not** part of the saga: a deletion can't be refused, so there is nothing to compensate. If the event is lost (at-most-once), the space stays used.
+
 ### Delivery guarantee
 At-most-once, like the rest of the system: replies are published after the local transaction is committed, and a lost reply is not resent. The orchestrator is expected to time out and send `file.release-quota`, which cleans up whatever state FileService is in.
 

@@ -75,9 +75,9 @@ Same recipients as `chat.message-sent`. `content` is the new content.
 ```
 
 ### `chat.message-deleted`
-Published only the first time the message is deleted. Without content.
+Published only the first time the message is deleted. Without content. `attachmentFileId` (new field, non-breaking) is set when the message had a file, so FileService can delete it and give the quota back - otherwise `null`.
 ```json
-{ "messageId": "…", "chatId": "…", "deletedAt": "2026-09-28T12:02:00+00:00", "recipientUserIds": ["…"] }
+{ "messageId": "…", "chatId": "…", "deletedAt": "2026-09-28T12:02:00+00:00", "recipientUserIds": ["…"], "attachmentFileId": null }
 ```
 
 ### `chat.participant-added`
@@ -105,6 +105,7 @@ Consumers should start their own span with it as parent. That way logs across se
 | Consumer | Subscription | Events | Used for |
 |---|---|---|---|
 | Real-Time Communication (RTC) | `real-time-server` | `chat.message-sent`, `chat.participant-added`, `chat.messages-seen` | Pushing `chat.message-sent` to connected clients (the other two are only logged). Does not yet subscribe to `chat.message-edited`/`chat.message-deleted` |
+| FileService | `file-service` | `chat.message-deleted` | Deleting the file in `attachmentFileId` and freeing the sender's quota |
 
 The queue is only created once a consumer subscribes. Events published before that are lost.
 

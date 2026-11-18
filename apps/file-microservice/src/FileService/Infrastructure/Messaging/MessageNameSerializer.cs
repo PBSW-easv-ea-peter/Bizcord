@@ -14,7 +14,8 @@ public sealed class MessageNameSerializer : ITypeNameSerializer
         [typeof(ReleaseQuota)] = MessageNames.ReleaseQuota,
         [typeof(QuotaReserved)] = MessageNames.QuotaReserved,
         [typeof(QuotaRejected)] = MessageNames.QuotaRejected,
-        [typeof(QuotaReleased)] = MessageNames.QuotaReleased
+        [typeof(QuotaReleased)] = MessageNames.QuotaReleased,
+        [typeof(MessageDeleted)] = ChatEventNames.MessageDeleted
     };
 
     private static readonly IReadOnlyDictionary<string, Type> Types = Names.ToDictionary(pair => pair.Value, pair => pair.Key);

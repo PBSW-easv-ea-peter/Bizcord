@@ -108,7 +108,7 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
         rabbitMq -> realTimeCommunicationService "Deliver: subscribed chat.* events"
         realTimeCommunicationService -> rabbitMq "Publish: rtc.message-delivered"
         rabbitMq -> chatService "Deliver: file.quota-* (saga replies)"
-        rabbitMq -> fileService "Deliver: file.reserve-quota, file.release-quota (saga commands)"
+        rabbitMq -> fileService "Deliver: file.reserve-quota, file.release-quota (saga commands), chat.message-deleted (free quota)"
         fileService -> rabbitMq "Publish: file.quota-reserved/-rejected/-released"
 
         // RTC bypasses the gateway (long-lived WebSockets), so it must validate the JWT itself.
