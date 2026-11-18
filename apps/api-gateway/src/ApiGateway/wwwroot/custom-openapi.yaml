@@ -55,6 +55,41 @@ paths:
           description: Chat service is healthy
         "503":
           description: Chat service is unhealthy
+          
+  /chats/{chatId}/overview:
+    get:
+      tags:
+        - Chat
+      summary: Get chat overview
+      description: |
+        Returns an aggregated overview of a chat, combining data from
+        the chat and messages services.
+
+        Requires a valid Bearer JWT token with the role claim
+        set to `internal-service`.
+      operationId: getChatOverview
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: chatId
+          in: path
+          required: true
+          type: string
+          description: The ID of the chat.
+      responses:
+        '200':
+          description: Successfully retrieved the chat overview.
+          schema:
+            type: object
+            additionalProperties: true
+        '401':
+          description: Missing or invalid authentication token.
+        '403':
+          description: The authenticated user does not have the required role.
+        '404':
+          description: Chat not found.
+        '500':
+          description: Internal server error.
 
 definitions:
   CreateTokenOptions:

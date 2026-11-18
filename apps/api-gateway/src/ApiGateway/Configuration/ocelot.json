@@ -103,19 +103,10 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "chatservice",
+          "Host": "localhost",
           "Port": 8081
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKeys": [
-          "Bearer"
-        ],
-        "AllowedScopes": []
-      },
-      "RouteClaimsRequirement": {
-        "role": "member"
-      },
       "AddHeadersToRequest": {
         "X-User-Id": "Claims[sub] > value"
       }
@@ -130,7 +121,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "chatservice",
+          "Host": "localhost",
           "Port": 8081
         }
       ],
@@ -158,7 +149,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "chatservice",
+          "Host": "localhost",
           "Port": 8081
         }
       ],
@@ -169,7 +160,7 @@
         "AllowedScopes": []
       },
       "RouteClaimsRequirement": {
-        "role": "member"
+        "role": "internal-service"
       },
       "AddHeadersToRequest": {
         "X-User-Id": "Claims[sub] > value"
@@ -284,11 +275,23 @@
   "DynamicRoutes": [],
   "Aggregates": [
     {
+      "Priority": 100,
       "UpstreamPathTemplate": "/chats/{chatId}/overview",
       "RouteKeys": [
         "chat",
         "messages"
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [
+          "Bearer"
+        ]
+      },
+      "RouteClaimsRequirement": {
+        "role": "internal-service"
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[sub] > value"
+      }
     }
   ],
   "GlobalConfiguration": {
