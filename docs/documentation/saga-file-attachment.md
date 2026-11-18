@@ -153,7 +153,9 @@ Every message carries `sagaId` - that is how a reply is matched to its saga inst
 | `file.release-quota` | Command (compensation) | ChatService → FileService | `sagaId`, `fileId`, `userId` |
 | `file.quota-released` | Event | FileService → ChatService | `sagaId`, `fileId`, `userId` |
 
-**Deviation from the assignment (open - we have asked the teacher):** it says to define the messages in a shared `Shared.Contracts` project. We don't share code between services (see `CLAUDE.md` and ChatService's "Our answer to week 38, Task 02"), so each service has its own records and the contract is the documented JSON - tested from both sides (`FileSagaContractTests` in ChatService, `ContractTests` in FileService).
+**Deviation from the assignment (decided in the group):** it says to define the messages in a shared `Shared.Contracts` project. We don't share code between services (see `CLAUDE.md` and ChatService's "Our answer to week 38, Task 02"), so each service has its own records and the contract is the documented JSON - tested from both sides (`FileSagaContractTests` in ChatService, `ContractTests` in FileService).
+
+Why that fits this saga in particular: we **orchestrate**. The commands go point-to-point to one service (FileService), and the replies go back to one service (the orchestrator). A shared library pays off more with choreography, where events are broadcast to many subscribers that all need the same types. Here it would couple two services to save a handful of records, while the contract tests give the same safety. If more services join the saga, a shared contracts library (like `libs/Bizcord.Logging`) is the natural next step.
 
 ## Saga state
 
