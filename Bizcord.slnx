@@ -13,9 +13,9 @@
   <Folder Name="/apps/real-time-communication-microservice/tests/">
     <Project Path="apps/real-time-communication-microservice/tests/RealTimeCommunicationServer.Tests/RealTimeCommunicationServer.Tests.csproj" />
   </Folder>
+  <Folder Name="/apps/" />
   <Folder Name="/apps/api-gateway/" />
-  <Folder Name="/apps/api-gateway/src/" >
-    <Project Path="apps/api-gateway/src/OcelotGateway/OcelotGateway.csproj" />
+  <Folder Name="/apps/api-gateway/src/">
     <Project Path="apps/api-gateway/src/ApiGateway/api-gateway.csproj" />
   </Folder>
   <Folder Name="/libs/">

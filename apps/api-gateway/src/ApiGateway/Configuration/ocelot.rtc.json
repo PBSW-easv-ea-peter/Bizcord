@@ -1,0 +1,27 @@
+{
+    "Routes": [
+        {
+            "Key": "rtc-messages-post",
+            "UpstreamPathTemplate": "/rtc/messages",
+            "UpstreamHttpMethod": ["POST"],
+            "DownstreamPathTemplate": "/api/messages",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8082 }],
+            "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+            "RouteClaimsRequirement": { "role": "member" },
+            "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
+        },
+        {
+            "Key": "rtc-hub",
+            "UpstreamPathTemplate": "/rtc/hubs/chat/{everything}",
+            "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
+            "DownstreamPathTemplate": "/hubs/chat/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8082 }],
+            "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+            "RouteClaimsRequirement": { "role": "member" },
+            "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" },
+            "AddQueriesToRequest": { "userId": "Claims[sub] > value" }
+        }
+    ]
+}

@@ -29,8 +29,6 @@ builder.Services.AddScoped<MessageAppService>();
 
 // OpenAPI
 builder.Services.AddOpenApi();
-
-// Swagger
 builder.Services.AddSwaggerGen();
 
 // Error handling (RFC 7807 ProblemDetails)
@@ -48,13 +46,9 @@ var app = builder.Build();
 // Always - otherwise DomainExceptionHandler does not map errors to 4xx in development.
 app.UseExceptionHandler();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.MapOpenApi();
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.MapHealthChecks("/health");
 app.MapControllers();
