@@ -138,7 +138,7 @@ The alternative, an **optimistic** design, would show the message at once with a
 ## Known limitations
 
 - A **temporary file that is never sent** (uploaded, then the user closes the app) is never deleted. A cleanup job in FileService should delete `Temporary` files older than, say, 24 hours.
-- **Deleting a message later frees the quota** - but that is deliberately *not* part of the saga. `chat.message-deleted` carries `attachmentFileId`, and FileService deletes the file and gives the space back. A deletion can't be refused, so there is nothing to compensate: it is a plain event, not a command with a reply. If the event is lost (at-most-once), the space stays used. The quota is **storage** (what you have stored right now), not a rate per hour or day.
+- **Deleting a message later** does not free the quota yet. That comes in a follow-up PR, and it is deliberately *not* part of the saga: `chat.message-deleted` will carry `attachmentFileId`, and FileService deletes the file and gives the space back. A deletion can't be refused, so there is nothing to compensate. It is a plain event, not a command with a reply. The quota is **storage** (what you have stored right now), not a rate per hour or day.
 - **Downloads have no access check**: anyone with the (unguessable) file id can download. FileService doesn't know who is in which chat.
 - **RTC pushes only the text** of `chat.message-sent`. Clients fetch the attachment via ChatService's REST API.
 - The **file bytes live in Postgres** (`bytea`), so deleting the file and the quota change are one transaction. Real large files belong in blob storage.
@@ -169,7 +169,7 @@ To see the timeout: stop FileService (`docker compose stop fileservice`) between
 |---|---|
 | Orchestrator | `apps/chat-microservice/src/ChatService/Application/FileMessageSagaOrchestrator.cs` |
 | Saga state (domain) | `apps/chat-microservice/src/ChatService/Domain/FileMessageSaga.cs` |
-| Saga state (persistence) | `.../Infrastructure/Persistence/DapperFileMessageSagaRepository.cs`, `chatDB/postgres/init/004_file_message_saga.sql` |
+| Saga state (persistence) | `.../Infrastructure/Persistence/DapperFileMessageSagaRepository.cs`, `chatDB/postgres/init/005_file_message_sagas.sql` |
 | Replies → orchestrator | `.../Infrastructure/Messaging/FileSagaReplyConsumer.cs` |
 | Timeout job | `.../Infrastructure/Messaging/FileSagaTimeoutService.cs` (`FileSaga:Timeout`, `FileSaga:CheckInterval`) |
 | Participant | `apps/file-microservice/src/FileService/Application/QuotaSagaParticipant.cs` |
