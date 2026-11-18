@@ -1,0 +1,72 @@
+swagger: "2.0"
+
+info:
+  title: Bizcord.ApiGateway
+  description: Bizcord API Gateway
+  version: 1.0.0
+
+host: localhost:8080
+schemes:
+  - http
+
+basePath: /
+
+consumes:
+  - application/json
+
+produces:
+  - application/json
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: "Enter your JWT token using the format: Bearer {token}"
+
+security:
+  - Bearer: []
+
+paths:
+  /Faucet:
+    post:
+      tags:
+        - Faucet
+      summary: Create an authentication token
+      security: []
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateTokenOptions"
+      responses:
+        "200":
+          description: OK
+
+  /chat/health:
+    get:
+      tags:
+        - Chat
+      summary: Check chat service health
+      operationId: GetChatHealth
+      responses:
+        "200":
+          description: Chat service is healthy
+        "503":
+          description: Chat service is unhealthy
+
+definitions:
+  CreateTokenOptions:
+    type: object
+    properties:
+      claims:
+        type: object
+        additionalProperties:
+          type: string
+    additionalProperties: false
+
+tags:
+  - name: Faucet
+  - name: Chat
+  

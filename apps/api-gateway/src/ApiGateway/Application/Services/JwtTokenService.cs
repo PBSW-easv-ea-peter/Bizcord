@@ -26,7 +26,10 @@ public class JwtTokenService
         var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.AuthenticationProviderKey));
         var signingCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
-        var claims = new List<Claim>();
+        List<Claim> claims =
+        [
+            new("role", "internal-service")
+        ];
         foreach (var claim in options.Claims)
         {
             if (claim.Key == "sub")

@@ -1,5 +1,6 @@
 using Bizcord.ApiGateway.Application.Services;
 using Bizcord.ApiGateway.Extensions;
+using Microsoft.OpenApi;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 
@@ -14,25 +15,53 @@ builder.Services.Configure<JwtOptions>(
 builder.Services.AddJwtTokenService();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter your JWT Bearer token."
+    });
+
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+    });
+});
 builder.Services.AddApiGatewayServices(builder.Configuration);
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+app.MapGet("/custom-openapi.yaml", async context =>
+{
+    context.Response.ContentType = "application/yaml";
+
+    await context.Response.SendFileAsync(
+        Path.Combine(
+            app.Environment.WebRootPath!,
+            "custom-openapi.yaml"));
+});
+
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint(
+        "/custom-openapi.yaml",
+        "Bizcord API Gateway");
+});
 
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Execute the faucet controller before Ocelot's terminal proxy pipeline.
 #pragma warning disable ASP0014
 app.UseEndpoints(endpoints => endpoints.MapControllers());
-#pragma warning restore ASP0014
+#pragma warning restore ASP0014;
 
-// These exercise headers must come from validated token claims, not the client.
 app.Use(async (context, next) =>
 {
     context.Request.Headers.Remove("X-UserId");
