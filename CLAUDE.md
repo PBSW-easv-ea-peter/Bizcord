@@ -8,7 +8,7 @@
 ## Structure
 - `apps/chat-microservice/` – ChatService (chats, messages, receipts). Contract: `apps/chat-microservice/docs/contracts.md`.
 - `apps/real-time-communication-microservice/` – RTC (SignalR push, presence). Contract: `apps/real-time-communication-microservice/docs/contracts.md`.
-- `apps/file-microservice/` – FileService (files and storage quota, participant in the week 46 file-message saga). Contract: `apps/file-microservice/docs/contracts.md`.
+- `apps/file-microservice/` – FileService (files and storage quota, participant in the week 46 file-message saga). Contract: `apps/file-microservice/docs/contracts.md`. Saga design: `docs/documentation/saga-file-attachment.md`.
 - `libs/Bizcord.Logging/` – shared log format (`docs/logging-template.json`).
 - `C4 diagram/docs/workspace.dsl` – architecture. Update it when components or relationships change.
 

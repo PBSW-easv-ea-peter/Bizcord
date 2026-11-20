@@ -23,6 +23,7 @@ public static class PersistenceServiceCollectionExtensions
         services.AddScoped<IChatRepository, DapperChatRepository>();
         services.AddScoped<IMessageRepository, DapperMessageRepository>();
         services.AddScoped<IReceiptRepository, DapperReceiptRepository>();
+        services.AddScoped<IFileMessageSagaRepository, DapperFileMessageSagaRepository>();
 
         return services;
     }

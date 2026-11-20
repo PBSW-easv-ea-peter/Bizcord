@@ -13,7 +13,7 @@ public sealed class Message
     /// </summary>
     public MessageContent? Content { get; private set; }
 
-    /// <summary>A file in FileService. Will be set by the file-message saga (week 46) once the file's quota is reserved. Removed on delete.</summary>
+    /// <summary>Set only by the file-message saga, once FileService has reserved quota for the file. Removed on delete.</summary>
     public Attachment? Attachment { get; private set; }
     public DateTimeOffset SentAt { get; }
     public DateTimeOffset? EditedAt { get; private set; }
@@ -82,7 +82,7 @@ public sealed class Message
         if (IsDeleted)
             return false;
 
-        // The file reference goes too.
+        // The file reference goes too. MessageAppService publishes the file id, so FileService deletes the file and frees the quota.
         Content = null;
         Attachment = null;
         DeletedAt = now;

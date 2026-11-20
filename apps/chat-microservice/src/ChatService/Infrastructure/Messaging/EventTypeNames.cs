@@ -17,7 +17,12 @@ public sealed class EventTypeNames : ITypeNameSerializer
         [typeof(MessagesSeen)] = EventNames.MessagesSeen,
         [typeof(MessageEdited)] = EventNames.MessageEdited,
         [typeof(MessageDeleted)] = EventNames.MessageDeleted,
-        [typeof(MessageDelivered)] = EventNames.MessageDelivered
+        [typeof(MessageDelivered)] = EventNames.MessageDelivered,
+        [typeof(ReserveQuota)] = EventNames.ReserveQuota,
+        [typeof(ReleaseQuota)] = EventNames.ReleaseQuota,
+        [typeof(QuotaReserved)] = EventNames.QuotaReserved,
+        [typeof(QuotaRejected)] = EventNames.QuotaRejected,
+        [typeof(QuotaReleased)] = EventNames.QuotaReleased
     });
 
     private readonly IReadOnlyDictionary<Type, string> _names;

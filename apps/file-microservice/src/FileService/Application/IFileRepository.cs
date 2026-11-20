@@ -40,4 +40,10 @@ public interface IFileRepository
     /// Idempotent - returns false if there was nothing to release.
     /// </summary>
     Task<bool> ReleaseAsync(Guid sagaId, Guid fileId, Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The message the file was attached to is deleted: delete the file and give its size back to the owner's quota,
+    /// in one local transaction. Idempotent - returns false if the file is already gone (or was never attached).
+    /// </summary>
+    Task<bool> DeleteAttachedAsync(Guid fileId, CancellationToken cancellationToken = default);
 }

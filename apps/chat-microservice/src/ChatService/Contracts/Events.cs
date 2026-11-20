@@ -14,6 +14,24 @@ public static class EventNames
 
     /// <summary>Consumes - published by Real-Time Communication Service.</summary>
     public const string MessageDelivered = "rtc.message-delivered";
+
+    // File-message saga. FileService owns these names: commands are addressed to it, events come from it.
+    // See apps/file-microservice/docs/contracts.md.
+
+    /// <summary>Sends (command).</summary>
+    public const string ReserveQuota = "file.reserve-quota";
+
+    /// <summary>Sends (command, compensation).</summary>
+    public const string ReleaseQuota = "file.release-quota";
+
+    /// <summary>Consumes.</summary>
+    public const string QuotaReserved = "file.quota-reserved";
+
+    /// <summary>Consumes.</summary>
+    public const string QuotaRejected = "file.quota-rejected";
+
+    /// <summary>Consumes.</summary>
+    public const string QuotaReleased = "file.quota-released";
 }
 
 /// <summary>Content is null when the message only has a file. Attachment is null for plain text messages.</summary>
@@ -46,12 +64,16 @@ public sealed record MessageEdited(
     DateTimeOffset EditedAt,
     IReadOnlyList<Guid> RecipientUserIds);
 
-/// <summary>Without content - it has just been deleted.</summary>
+/// <summary>
+/// Without content - it has just been deleted. AttachmentFileId is set when the message had a file,
+/// so FileService can delete it and give the quota back.
+/// </summary>
 public sealed record MessageDeleted(
     Guid MessageId,
     Guid ChatId,
     DateTimeOffset DeletedAt,
-    IReadOnlyList<Guid> RecipientUserIds);
+    IReadOnlyList<Guid> RecipientUserIds,
+    Guid? AttachmentFileId = null);
 
 /// <summary>One per "up to and including" batch: all other users' messages up to and including UpToMessageId are now seen by UserId.</summary>
 public sealed record MessagesSeen(

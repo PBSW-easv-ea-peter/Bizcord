@@ -1,5 +1,6 @@
 using Bizcord.Logging;
 using FileService.Application;
+using FileService.Contracts;
 using FileService.Domain;
 using FileService.Infrastructure.Messaging;
 using FileService.Infrastructure.Persistence;
@@ -19,12 +20,16 @@ builder.Services.AddScoped<IFileRepository, DapperFileRepository>();
 // Messaging
 builder.Services.AddFileMessaging(builder.Configuration.RabbitMqConnectionString());
 builder.Services.AddHostedService<QuotaCommandConsumer>();
+builder.Services.AddHostedService<ChatEventConsumer>();
 
 // Application
 builder.Services.AddSingleton(builder.Configuration.GetSection("Quota").Get<QuotaSettings>() ?? new QuotaSettings());
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<FileAppService>();
 builder.Services.AddScoped<QuotaSagaParticipant>();
+builder.Services.AddScoped<IMessageHandler<ReserveQuota>>(sp => sp.GetRequiredService<QuotaSagaParticipant>());
+builder.Services.AddScoped<IMessageHandler<ReleaseQuota>>(sp => sp.GetRequiredService<QuotaSagaParticipant>());
+builder.Services.AddScoped<IMessageHandler<MessageDeleted>, MessageDeletedHandler>();
 
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();

@@ -22,7 +22,11 @@ public sealed class DapperMessageRepository(ChatDb db) : IMessageRepository
     }
 
     public Task AddAsync(Message message, CancellationToken cancellationToken = default) =>
-        db.RunAsync(connection => connection.ExecuteAsync(new CommandDefinition(
+        db.RunAsync(connection => InsertAsync(connection, null, message, cancellationToken), cancellationToken);
+
+    /// <summary>Takes an optional transaction, so the saga repository can insert the message in the same transaction as its own update.</summary>
+    internal static Task InsertAsync(NpgsqlConnection connection, NpgsqlTransaction? transaction, Message message, CancellationToken cancellationToken) =>
+        connection.ExecuteAsync(new CommandDefinition(
             """
             insert into messages (id, chat_id, sender_user_id, content, sent_at,
                                   attachment_file_id, attachment_file_name, attachment_size_bytes)

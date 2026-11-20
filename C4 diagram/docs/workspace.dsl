@@ -33,6 +33,10 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
                     chatMessageClient = component "IMessageClient" "Abstraction over the message broker (Publish/Subscribe), so the application layer does not depend on EasyNetQ." "C# Interface"
                     chatRabbitMqMessageClient = component "RabbitMqMessageClient" "EasyNetQ-based implementation of IMessageClient. Uses logical event names (EventTypeNames) instead of C# type names." "C# / EasyNetQ"
                     messageDeliveredConsumer = component "MessageDeliveredConsumer" "Subscribes to rtc.message-delivered on startup and calls MessageAppService in a new DI scope per message." "ASP.NET Core IHostedService"
+                    fileMessagesController = component "FileMessagesController" "REST under /chats/{id}/file-messages: start the file-message saga (POST, 202 Accepted) and follow it (GET)." "ASP.NET Core Web API Controller"
+                    fileMessageSagaOrchestrator = component "FileMessageSagaOrchestrator" "Orchestrates the saga 'send a message with a file': sends file.reserve-quota, saves the message on file.quota-reserved, compensates with file.release-quota. Saga state in ChatDB (file_message_sagas)." "C# application service"
+                    fileSagaReplyConsumer = component "FileSagaReplyConsumer" "Subscribes to file.quota-reserved/-rejected/-released and calls the orchestrator in a new DI scope per message." "ASP.NET Core IHostedService"
+                    fileSagaTimeoutService = component "FileSagaTimeoutService" "Every 30 s: compensates sagas without an answer for 2 minutes, retries unanswered compensations, gives up after 3." "ASP.NET Core BackgroundService"
                 }
                 chatDb = container "ChatDB" "Contains chats, participants, messages and message receipts." "PostgreSQL" "Database"
             }
@@ -107,7 +111,8 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
         rabbitMq -> chatService "Deliver: rtc.message-delivered"
         rabbitMq -> realTimeCommunicationService "Deliver: subscribed chat.* events"
         realTimeCommunicationService -> rabbitMq "Publish: rtc.message-delivered"
-        rabbitMq -> fileService "Deliver: file.reserve-quota, file.release-quota (saga commands)"
+        rabbitMq -> chatService "Deliver: file.quota-* (saga replies)"
+        rabbitMq -> fileService "Deliver: file.reserve-quota, file.release-quota (saga commands), chat.message-deleted (free quota)"
         fileService -> rabbitMq "Publish: file.quota-reserved/-rejected/-released"
 
         // RTC bypasses the gateway (long-lived WebSockets), so it must validate the JWT itself.
@@ -134,6 +139,14 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
         messageDeliveredConsumer -> messageAppService "MarkDeliveredAsync"
         chatMessageClient -> chatRabbitMqMessageClient "Implemented by"
         chatRabbitMqMessageClient -> rabbitMq "Publish/Subscribe via EasyNetQ"
+        apiGateway -> fileMessagesController "Send a message with a file, follow the saga (route not added yet)"
+        fileMessagesController -> fileMessageSagaOrchestrator "Calls"
+        fileSagaReplyConsumer -> fileMessageSagaOrchestrator "HandleAsync(quota-reserved/-rejected/-released)"
+        fileSagaTimeoutService -> fileMessageSagaOrchestrator "TimeOutStaleAsync"
+        fileMessageSagaOrchestrator -> domainModel "FileMessageSaga, Message.SendWithAttachment"
+        fileMessageSagaOrchestrator -> repositories "Saga state + message in one transaction"
+        fileMessageSagaOrchestrator -> chatMessageClient "Send file.reserve-quota/-release-quota, publish chat.message-sent"
+        fileSagaReplyConsumer -> chatMessageClient "Subscribe file.quota-*"
 
         // Component-level relationships for Real-Time Communication Service
         rtcMessagesController -> rtcMessageClient "Publish<PingMessage>"

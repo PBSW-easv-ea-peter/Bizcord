@@ -31,6 +31,16 @@ internal static class ContractMappings
             ? new AttachmentResponse(attachment.FileId, attachment.FileName, attachment.SizeBytes)
             : null);
 
+    public static FileMessageResponse ToResponse(this FileMessageSaga saga) => new(
+        saga.SagaId,
+        saga.ChatId,
+        saga.FileId,
+        saga.Status.ToString(),
+        saga.MessageId,
+        saga.FailureReason,
+        saga.StartedAt,
+        saga.CompletedAt);
+
     public static ReceiptResponse ToResponse(this MessageReceipt receipt) => new(
         receipt.UserId,
         receipt.DeliveredAt,

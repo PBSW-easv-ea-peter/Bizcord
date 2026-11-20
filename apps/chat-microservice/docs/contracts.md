@@ -35,6 +35,8 @@ All calls require the `X-User-Id` header (the user performing the action). It wi
 | `DELETE /chats/{chatId}/messages/{messageId}` | | 204 – sender only. Soft delete, idempotent |
 | `POST /chats/{chatId}/messages/{messageId}/seen` | | 204 – all other users' messages *up to and including* this one |
 | `GET /chats/{chatId}/messages/{messageId}/receipts` | | 200 |
+| `POST /chats/{chatId}/file-messages` | `{ "fileId", "content"? }` | 202 Accepted + `Location` – starts the saga "send a message with a file" ([design](../../../docs/documentation/saga-file-attachment.md)). `fileId` comes from FileService's `POST /files`. 403 if not an active participant |
+| `GET /chats/{chatId}/file-messages/{sagaId}` | | 200 – sender only (404 for others). `status`: `AwaitingQuota`, `Completed` (then `messageId` is set), `Compensating`, `Failed` or `CompensationFailed` (then `reason` is set) |
 
 Error codes: `400` invalid input · `403` not an (active) participant, missing role or not the sender · `404` unknown chat/message · `409` already exists or is deleted · `503` the database is unavailable.
 
@@ -48,13 +50,19 @@ A message looks like this (`editedAt` and `deletedAt` are `null` until it happen
   "attachment": { "fileId": "…", "fileName": "video.mp4", "sizeBytes": 15000000 } }
 ```
 
+A file message (saga status) looks like this:
+```json
+{ "sagaId": "…", "chatId": "…", "fileId": "…", "status": "Failed", "messageId": null,
+  "reason": "Storage quota exceeded: … Upgrade to Premium for more storage.", "startedAt": "…" }
+```
+
 ## Events (RabbitMQ)
 Each event has its own **topic exchange** with the logical name. The message's `type` header has the same name.
 Subscribe by binding your own queue to the exchange with routing key `#`. No .NET and no shared code required.
 
 ### `chat.message-sent`
 A message has been sent. `recipientUserIds` are the active participants minus the sender – enough to push without calling ChatService.
-`attachment` (new field, non-breaking) is `null` for plain text messages. For a message with a file, `content` may be `null`.
+`attachment` (new field, non-breaking) is `null` for plain text messages. For a message with a file, `content` may be `null`, and the event is published only when the saga has completed - so a file rejected by FileService never reaches anyone.
 ```json
 {
   "messageId": "0192...", "chatId": "0192...", "senderUserId": "…",
@@ -71,9 +79,9 @@ Same recipients as `chat.message-sent`. `content` is the new content.
 ```
 
 ### `chat.message-deleted`
-Published only the first time the message is deleted. Without content.
+Published only the first time the message is deleted. Without content. `attachmentFileId` (new field, non-breaking) is set when the message had a file, so FileService can delete it and give the quota back - otherwise `null`.
 ```json
-{ "messageId": "…", "chatId": "…", "deletedAt": "2026-09-28T12:02:00+00:00", "recipientUserIds": ["…"] }
+{ "messageId": "…", "chatId": "…", "deletedAt": "2026-09-28T12:02:00+00:00", "recipientUserIds": ["…"], "attachmentFileId": null }
 ```
 
 ### `chat.participant-added`
@@ -101,6 +109,7 @@ Consumers should start their own span with it as parent. That way logs across se
 | Consumer | Subscription | Events | Used for |
 |---|---|---|---|
 | Real-Time Communication (RTC) | `real-time-server` | `chat.message-sent`, `chat.participant-added`, `chat.messages-seen` | Pushing `chat.message-sent` to connected clients (the other two are only logged). Does not yet subscribe to `chat.message-edited`/`chat.message-deleted` |
+| FileService | `file-service` | `chat.message-deleted` | Deleting the file in `attachmentFileId` and freeing the sender's quota |
 
 The queue is only created once a consumer subscribes. Events published before that are lost.
 
@@ -113,4 +122,5 @@ New fields are added without notice and are non-breaking. A breaking change (rem
 | UserService | Valid `userId`s. Today we trust `X-User-Id` and the ids we receive | Assumed |
 | UserService | Event when a user is deleted/deactivated (e.g. `user.deleted`), so participations can be ended | Wanted |
 | RTC | `rtc.message-delivered` (`messageId`, `deliveredToUserIds`, `deliveredAt`) → sets `deliveredAt` on receipts. Subscription `chat-service`. See [RTC's contract](../../real-time-communication-microservice/docs/contracts.md). If the database is unavailable, the event ends up in EasyNetQ's error queue and is not retried | Delivered – tested in `MessageDeliveredConsumerContractTests` |
+| FileService | The saga messages `file.reserve-quota`/`file.release-quota` (we send) and `file.quota-reserved`/`-rejected`/`-released` (we consume, subscription `chat-service`). See [FileService's contract](../../file-microservice/docs/contracts.md) | Delivered – tested in `FileSagaContractTests` |
 | UserAuth | Token instead of `X-User-Id` | Later |

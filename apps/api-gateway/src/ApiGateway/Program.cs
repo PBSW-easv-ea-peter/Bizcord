@@ -4,6 +4,8 @@ using Bizcord.ApiGateway.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Bizcord.ApiGateway.Application.Services;
+using Bizcord.ApiGateway.Extensions;
 using Microsoft.OpenApi;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;

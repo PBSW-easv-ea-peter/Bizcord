@@ -232,6 +232,21 @@ public class MessageAppServiceTests
         var published = Assert.IsType<MessageDeleted>(Assert.Single(_messageClient.Published));
         Assert.Equal(new MessageDeleted(message.Id, _chat.Id, Now, published.RecipientUserIds), published);
         Assert.Equal([_bob], published.RecipientUserIds);
+        Assert.Null(published.AttachmentFileId);
+    }
+
+    [Fact]
+    public async Task Delete_MessageWithFile_PublishesTheFileId_SoFileServiceCanFreeTheQuota()
+    {
+        var fileId = Guid.NewGuid();
+        var message = Message.SendWithAttachment(_chat, _alice, null, new Attachment(fileId, "video.mp4", 42), Now);
+        _messages.Messages.Add(message.Id, message);
+
+        await _service.DeleteAsync(_chat.Id, _alice, message.Id);
+
+        var published = Assert.IsType<MessageDeleted>(Assert.Single(_messageClient.Published));
+        Assert.Equal(fileId, published.AttachmentFileId);
+        Assert.Null(message.Attachment);
     }
 
     [Fact]
