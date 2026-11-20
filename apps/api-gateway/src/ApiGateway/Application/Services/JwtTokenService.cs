@@ -23,6 +23,9 @@ public class JwtTokenService
 
     public AuthenticationToken CreateToken(CreateTokenOptions options)
     {
+        if (string.IsNullOrEmpty(_options.AuthenticationProviderKey))
+            throw new InvalidOperationException("JWT signing key has not been configured. Ensure Vault is accessible and the secret was retrieved at startup.");
+
         var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.AuthenticationProviderKey));
         var signingCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
