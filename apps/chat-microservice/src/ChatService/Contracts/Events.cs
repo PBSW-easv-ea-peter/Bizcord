@@ -16,13 +16,20 @@ public static class EventNames
     public const string MessageDelivered = "rtc.message-delivered";
 }
 
+/// <summary>Content is null when the message only has a file. Attachment is null for plain text messages.</summary>
 public sealed record MessageSent(
     Guid MessageId,
     Guid ChatId,
     Guid SenderUserId,
-    string Content,
+    string? Content,
     DateTimeOffset SentAt,
-    IReadOnlyList<Guid> RecipientUserIds);
+    IReadOnlyList<Guid> RecipientUserIds,
+    AttachmentInfo? Attachment = null);
+
+public sealed record AttachmentInfo(
+    Guid FileId,
+    string FileName,
+    long SizeBytes);
 
 public sealed record ParticipantAdded(
     Guid ChatId,

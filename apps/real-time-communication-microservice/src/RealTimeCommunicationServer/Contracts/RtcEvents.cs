@@ -12,10 +12,10 @@ public record MessageDelivered(
     IReadOnlyList<Guid> DeliveredToUserIds,
     DateTimeOffset DeliveredAt);
 
-/// <summary>Pushed to the client via SignalR as 'MessageReceived'.</summary>
+/// <summary>Pushed to the client via SignalR as 'MessageReceived'. Content is null for a message that only has a file.</summary>
 public record MessageReceived(
     Guid MessageId,
     Guid ChatId,
     Guid SenderUserId,
-    string Content,
+    string? Content,
     DateTimeOffset SentAt);

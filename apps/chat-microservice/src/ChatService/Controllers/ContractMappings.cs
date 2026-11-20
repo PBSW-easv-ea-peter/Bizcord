@@ -26,7 +26,10 @@ internal static class ContractMappings
         message.Content?.Value,
         message.SentAt,
         message.EditedAt,
-        message.DeletedAt);
+        message.DeletedAt,
+        message.Attachment is { } attachment
+            ? new AttachmentResponse(attachment.FileId, attachment.FileName, attachment.SizeBytes)
+            : null);
 
     public static ReceiptResponse ToResponse(this MessageReceipt receipt) => new(
         receipt.UserId,

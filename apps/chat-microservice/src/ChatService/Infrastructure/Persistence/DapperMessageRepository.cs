@@ -9,7 +9,8 @@ public sealed class DapperMessageRepository(ChatDb db) : IMessageRepository
 {
     private const string SelectColumns =
         "select id, chat_id as ChatId, sender_user_id as SenderUserId, content, sent_at as SentAt, " +
-        "edited_at as EditedAt, deleted_at as DeletedAt from messages";
+        "edited_at as EditedAt, deleted_at as DeletedAt, attachment_file_id as AttachmentFileId, " +
+        "attachment_file_name as AttachmentFileName, attachment_size_bytes as AttachmentSizeBytes from messages";
 
     public async Task<Message?> GetAsync(Guid messageId, CancellationToken cancellationToken = default)
     {
@@ -23,31 +24,42 @@ public sealed class DapperMessageRepository(ChatDb db) : IMessageRepository
     public Task AddAsync(Message message, CancellationToken cancellationToken = default) =>
         db.RunAsync(connection => connection.ExecuteAsync(new CommandDefinition(
             """
-            insert into messages (id, chat_id, sender_user_id, content, sent_at)
-            values (@Id, @ChatId, @SenderUserId, @Content, @SentAt)
+            insert into messages (id, chat_id, sender_user_id, content, sent_at,
+                                  attachment_file_id, attachment_file_name, attachment_size_bytes)
+            values (@Id, @ChatId, @SenderUserId, @Content, @SentAt,
+                    @AttachmentFileId, @AttachmentFileName, @AttachmentSizeBytes)
             """,
             new
             {
                 message.Id,
                 message.ChatId,
                 message.SenderUserId,
-                Content = message.Content!.Value,
-                SentAt = DbTime.ToDb(message.SentAt)
+                Content = message.Content?.Value,
+                SentAt = DbTime.ToDb(message.SentAt),
+                AttachmentFileId = message.Attachment?.FileId,
+                AttachmentFileName = message.Attachment?.FileName,
+                AttachmentSizeBytes = message.Attachment?.SizeBytes
             },
-            cancellationToken: cancellationToken)), cancellationToken);
+            transaction,
+            cancellationToken: cancellationToken));
 
     public async Task<bool> UpdateAsync(Message message, CancellationToken cancellationToken = default)
     {
         var updated = await db.RunAsync(connection => connection.ExecuteAsync(new CommandDefinition(
             """
             update messages
-            set content = @Content, edited_at = @EditedAt, deleted_at = @DeletedAt
+            set content = @Content, edited_at = @EditedAt, deleted_at = @DeletedAt,
+                attachment_file_id = @AttachmentFileId, attachment_file_name = @AttachmentFileName,
+                attachment_size_bytes = @AttachmentSizeBytes
             where id = @Id and deleted_at is null
             """,
             new
             {
                 message.Id,
                 Content = message.Content?.Value,
+                AttachmentFileId = message.Attachment?.FileId,
+                AttachmentFileName = message.Attachment?.FileName,
+                AttachmentSizeBytes = message.Attachment?.SizeBytes,
                 EditedAt = DbTime.ToDb(message.EditedAt),
                 DeletedAt = DbTime.ToDb(message.DeletedAt)
             },
@@ -84,10 +96,16 @@ public sealed class DapperMessageRepository(ChatDb db) : IMessageRepository
         row.Content is null ? null : new MessageContent(row.Content),
         DbTime.FromDb(row.SentAt),
         DbTime.FromDb(row.EditedAt),
-        DbTime.FromDb(row.DeletedAt));
+        DbTime.FromDb(row.DeletedAt),
+        row.AttachmentFileId is { } fileId
+            ? new Attachment(fileId, row.AttachmentFileName!, row.AttachmentSizeBytes!.Value)
+            : null);
 
     private sealed class MessageRow
     {
+        public Guid? AttachmentFileId { get; init; }
+        public string? AttachmentFileName { get; init; }
+        public long? AttachmentSizeBytes { get; init; }
         public Guid Id { get; init; }
         public Guid ChatId { get; init; }
         public Guid SenderUserId { get; init; }

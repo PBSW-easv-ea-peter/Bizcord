@@ -42,9 +42,10 @@ Error codes: `400` invalid input · `403` not an (active) participant, missing r
 - The database did not answer within a few seconds. No `Retry-After`. A write may still have been saved, so check (e.g. fetch messages) before resending – there is no idempotency key yet.
 - Repeated failures have opened the circuit breaker, and ChatService does not call the database at all. The response has a `Retry-After` header (seconds) – retrying sooner gets an immediate 503.
 
-A message looks like this (`editedAt` and `deletedAt` are `null` until it happens, and `content` is `null` when the message is deleted):
+A message looks like this (`editedAt` and `deletedAt` are `null` until it happens, and `content` is `null` when the message is deleted or only has a file). `attachment` (new field, non-breaking) is `null` unless the message was sent with a file - download it from FileService (`GET /files/{fileId}`):
 ```json
-{ "id": "…", "chatId": "…", "senderUserId": "…", "content": "Hej", "sentAt": "…", "editedAt": null, "deletedAt": null }
+{ "id": "…", "chatId": "…", "senderUserId": "…", "content": "Hej", "sentAt": "…", "editedAt": null, "deletedAt": null,
+  "attachment": { "fileId": "…", "fileName": "video.mp4", "sizeBytes": 15000000 } }
 ```
 
 ## Events (RabbitMQ)
@@ -53,11 +54,13 @@ Subscribe by binding your own queue to the exchange with routing key `#`. No .NE
 
 ### `chat.message-sent`
 A message has been sent. `recipientUserIds` are the active participants minus the sender – enough to push without calling ChatService.
+`attachment` (new field, non-breaking) is `null` for plain text messages. For a message with a file, `content` may be `null`.
 ```json
 {
   "messageId": "0192...", "chatId": "0192...", "senderUserId": "…",
   "content": "Hej", "sentAt": "2026-09-28T12:00:00+00:00",
-  "recipientUserIds": ["…"]
+  "recipientUserIds": ["…"],
+  "attachment": { "fileId": "…", "fileName": "video.mp4", "sizeBytes": 15000000 }
 }
 ```
 
