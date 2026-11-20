@@ -36,7 +36,11 @@ All calls require the `X-User-Id` header (the user performing the action). It wi
 | `POST /chats/{chatId}/messages/{messageId}/seen` | | 204 – all other users' messages *up to and including* this one |
 | `GET /chats/{chatId}/messages/{messageId}/receipts` | | 200 |
 
-Error codes: `400` invalid input · `403` not an (active) participant, missing role or not the sender · `404` unknown chat/message · `409` already exists or is deleted.
+Error codes: `400` invalid input · `403` not an (active) participant, missing role or not the sender · `404` unknown chat/message · `409` already exists or is deleted · `503` the database is unavailable.
+
+**503 Service Unavailable** can be returned by every endpoint. It is temporary: the request may be retried, while 4xx should not be. ChatService answers 503 in two cases:
+- The database did not answer within a few seconds. No `Retry-After`. A write may still have been saved, so check (e.g. fetch messages) before resending – there is no idempotency key yet.
+- Repeated failures have opened the circuit breaker, and ChatService does not call the database at all. The response has a `Retry-After` header (seconds) – retrying sooner gets an immediate 503.
 
 A message looks like this (`editedAt` and `deletedAt` are `null` until it happens, and `content` is `null` when the message is deleted):
 ```json
@@ -105,5 +109,5 @@ New fields are added without notice and are non-breaking. A breaking change (rem
 |---|---|---|
 | UserService | Valid `userId`s. Today we trust `X-User-Id` and the ids we receive | Assumed |
 | UserService | Event when a user is deleted/deactivated (e.g. `user.deleted`), so participations can be ended | Wanted |
-| RTC | `rtc.message-delivered` (`messageId`, `deliveredToUserIds`, `deliveredAt`) → sets `deliveredAt` on receipts. Subscription `chat-service`. See [RTC's contract](../../real-time-communication-microservice/docs/contracts.md) | Delivered – tested in `MessageDeliveredConsumerContractTests` |
+| RTC | `rtc.message-delivered` (`messageId`, `deliveredToUserIds`, `deliveredAt`) → sets `deliveredAt` on receipts. Subscription `chat-service`. See [RTC's contract](../../real-time-communication-microservice/docs/contracts.md). If the database is unavailable, the event ends up in EasyNetQ's error queue and is not retried | Delivered – tested in `MessageDeliveredConsumerContractTests` |
 | UserAuth | Token instead of `X-User-Id` | Later |
