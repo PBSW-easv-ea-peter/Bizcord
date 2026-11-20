@@ -1,0 +1,107 @@
+swagger: "2.0"
+
+info:
+  title: Bizcord.ApiGateway
+  description: Bizcord API Gateway
+  version: 1.0.0
+
+host: localhost:8080
+schemes:
+  - http
+
+basePath: /
+
+consumes:
+  - application/json
+
+produces:
+  - application/json
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: "Enter your JWT token using the format: Bearer {token}"
+
+security:
+  - Bearer: []
+
+paths:
+  /Faucet:
+    post:
+      tags:
+        - Faucet
+      summary: Create an authentication token
+      security: []
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateTokenOptions"
+      responses:
+        "200":
+          description: OK
+
+  /chat/health:
+    get:
+      tags:
+        - Chat
+      summary: Check chat service health
+      operationId: GetChatHealth
+      responses:
+        "200":
+          description: Chat service is healthy
+        "503":
+          description: Chat service is unhealthy
+          
+  /chats/{chatId}/overview:
+    get:
+      tags:
+        - Chat
+      summary: Get chat overview
+      description: |
+        Returns an aggregated overview of a chat, combining data from
+        the chat and messages services.
+
+        Requires a valid Bearer JWT token with the role claim
+        set to `internal-service`.
+      operationId: getChatOverview
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: chatId
+          in: path
+          required: true
+          type: string
+          description: The ID of the chat.
+      responses:
+        '200':
+          description: Successfully retrieved the chat overview.
+          schema:
+            type: object
+            additionalProperties: true
+        '401':
+          description: Missing or invalid authentication token.
+        '403':
+          description: The authenticated user does not have the required role.
+        '404':
+          description: Chat not found.
+        '500':
+          description: Internal server error.
+
+definitions:
+  CreateTokenOptions:
+    type: object
+    properties:
+      claims:
+        type: object
+        additionalProperties:
+          type: string
+    additionalProperties: false
+
+tags:
+  - name: Faucet
+  - name: Chat
+  

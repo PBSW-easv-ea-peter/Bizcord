@@ -1,0 +1,300 @@
+{
+  "Routes": [
+    {
+      "Key": "rtc-messages-post",
+      "UpstreamPathTemplate": "/rtc/messages",
+      "UpstreamHttpMethod": [
+        "POST"
+      ],
+      "DownstreamPathTemplate": "/api/messages",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "host.docker.internal",
+          "Port": 8082
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [
+          "Bearer"
+        ],
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {
+        "role": "member"
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[sub] > value"
+      }
+    },
+    {
+      "Key": "rtc-hub",
+      "UpstreamPathTemplate": "/rtc/hubs/chat/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH",
+        "HEAD",
+        "OPTIONS"
+      ],
+      "DownstreamPathTemplate": "/hubs/chat/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "host.docker.internal",
+          "Port": 8082
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [
+          "Bearer"
+        ],
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {
+        "role": "member"
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[sub] > value"
+      },
+      "AddQueriesToRequest": {
+        "userId": "Claims[sub] > value"
+      }
+    },
+    {
+      "Key": "chats-create",
+      "UpstreamPathTemplate": "/chats/{type}",
+      "UpstreamHttpMethod": [
+        "POST"
+      ],
+      "DownstreamPathTemplate": "/chats/{type}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "chatservice",
+          "Port": 8081
+        }
+      ],
+      "DownstreamHeaderTransform": {
+        "Location": "{DownstreamBaseUrl}, {BaseUrl}"
+      },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [
+          "Bearer"
+        ],
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {
+        "role": "member"
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[sub] > value"
+      }
+    },
+    {
+      "Key": "chat",
+      "UpstreamPathTemplate": "/chats/{chatId}",
+      "UpstreamHttpMethod": [
+        "GET"
+      ],
+      "DownstreamPathTemplate": "/chats/{chatId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 8081
+        }
+      ],
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[sub] > value"
+      }
+    },
+    {
+      "Key": "chat-participants",
+      "UpstreamPathTemplate": "/chats/{chatId}/participants",
+      "UpstreamHttpMethod": [
+        "POST"
+      ],
+      "DownstreamPathTemplate": "/chats/{chatId}/participants",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 8081
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [
+          "Bearer"
+        ],
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {
+        "role": "member"
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[sub] > value"
+      }
+    },
+    {
+      "Key": "messages",
+      "UpstreamPathTemplate": "/chats/{chatId}/messages",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST"
+      ],
+      "DownstreamPathTemplate": "/chats/{chatId}/messages",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 8081
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [
+          "Bearer"
+        ],
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {
+        "role": "internal-service"
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[sub] > value"
+      }
+    },
+    {
+      "Key": "chat-message-by-id",
+      "UpstreamPathTemplate": "/chats/{chatId}/messages/{messageId}",
+      "UpstreamHttpMethod": [
+        "PUT",
+        "DELETE"
+      ],
+      "DownstreamPathTemplate": "/chats/{chatId}/messages/{messageId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "chatservice",
+          "Port": 8081
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [
+          "Bearer"
+        ],
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {
+        "role": "member"
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[sub] > value"
+      }
+    },
+    {
+      "Key": "message-seen",
+      "UpstreamPathTemplate": "/chats/{chatId}/messages/{messageId}/seen",
+      "UpstreamHttpMethod": [
+        "POST"
+      ],
+      "DownstreamPathTemplate": "/chats/{chatId}/messages/{messageId}/seen",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "chatservice",
+          "Port": 8081
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [
+          "Bearer"
+        ],
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {
+        "role": "member"
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[sub] > value"
+      }
+    },
+    {
+      "Key": "message-receipts",
+      "UpstreamPathTemplate": "/chats/{chatId}/messages/{messageId}/receipts",
+      "UpstreamHttpMethod": [
+        "GET"
+      ],
+      "DownstreamPathTemplate": "/chats/{chatId}/messages/{messageId}/receipts",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "chatservice",
+          "Port": 8081
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [
+          "Bearer"
+        ],
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {
+        "role": "member"
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[sub] > value"
+      }
+    },
+    {
+      "Key": "health",
+      "UpstreamPathTemplate": "/chat/health",
+      "UpstreamHttpMethod": [
+        "GET"
+      ],
+      "DownstreamPathTemplate": "/health",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 8081
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [
+          "Bearer"
+        ]
+      },
+      "RouteClaimsRequirement": {
+        "role": "internal-service"
+      }
+    }
+  ],
+  "DynamicRoutes": [],
+  "Aggregates": [
+    {
+      "Priority": 100,
+      "UpstreamPathTemplate": "/chats/{chatId}/overview",
+      "RouteKeys": [
+        "chat",
+        "messages"
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKeys": [
+          "Bearer"
+        ]
+      },
+      "RouteClaimsRequirement": {
+        "role": "internal-service"
+      },
+      "AddHeadersToRequest": {
+        "X-User-Id": "Claims[sub] > value"
+      }
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "http://localhost:8080"
+  }
+}
