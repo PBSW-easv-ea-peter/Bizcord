@@ -8,12 +8,13 @@
 ## Structure
 - `apps/chat-microservice/` – ChatService (chats, messages, receipts). Contract: `apps/chat-microservice/docs/contracts.md`.
 - `apps/real-time-communication-microservice/` – RTC (SignalR push, presence). Contract: `apps/real-time-communication-microservice/docs/contracts.md`.
+- `apps/file-microservice/` – FileService (files and storage quota, participant in the week 46 file-message saga). Contract: `apps/file-microservice/docs/contracts.md`.
 - `libs/Bizcord.Logging/` – shared log format (`docs/logging-template.json`).
 - `C4 diagram/docs/workspace.dsl` – architecture. Update it when components or relationships change.
 
 ## Running and testing
 - Tests: `dotnet test Bizcord.slnx`. Only Docker needs to run – Postgres and RabbitMQ are started by Testcontainers.
-- Full stack: `docker compose up -d --build` from the repo root (ChatService :8081, RTC :8080, RabbitMQ UI :15672).
+- Full stack: `docker compose up -d --build` from the repo root (ChatService :8081, RTC :8082, FileService :8083, RabbitMQ UI :15672).
   After a failed RabbitMQ start, add `--renew-anon-volumes`.
 - Don't run the compose files under `apps/` at the same time as the root compose (same ports).
 
