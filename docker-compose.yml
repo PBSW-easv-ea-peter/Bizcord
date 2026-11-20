@@ -53,7 +53,7 @@ services:
       context: ./apps/api-gateway/
       dockerfile: Dockerfile
     environment:
-      Vault__Token: # ${VAULT_TOKEN}
+      Vault__Token:  # ${VAULT_TOKEN}
       Vault__Address: http://vault:8200
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
@@ -141,7 +141,7 @@ services:
     image: fluent/fluentd:v1.17-1
     user: root
     volumes:
-       - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
-       - /var/lib/docker/containers:/fluentd/log/containers:ro
+       - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro,z
+       - /var/lib/docker/containers:/fluentd/log/containers:ro,z
        - fluentd-pos:/fluentd/pos
 
