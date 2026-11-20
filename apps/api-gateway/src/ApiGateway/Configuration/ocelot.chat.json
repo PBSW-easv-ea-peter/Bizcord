@@ -18,7 +18,9 @@
       "UpstreamHttpMethod": ["GET"],
       "DownstreamPathTemplate": "/chats/{chatId}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8081 }],
+      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
+      "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+      "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
     },
     {
@@ -27,7 +29,7 @@
       "UpstreamHttpMethod": ["POST"],
       "DownstreamPathTemplate": "/chats/{chatId}/participants",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8081 }],
+      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
@@ -38,7 +40,7 @@
       "UpstreamHttpMethod": ["GET", "POST"],
       "DownstreamPathTemplate": "/chats/{chatId}/messages",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8081 }],
+      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "internal-service" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
@@ -82,7 +84,7 @@
       "UpstreamHttpMethod": ["GET"],
       "DownstreamPathTemplate": "/health",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8081 }],
+      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
       "AuthenticationOptions": {
         "AuthenticationProviderKeys": ["Bearer"]
       },
