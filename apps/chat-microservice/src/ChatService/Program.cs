@@ -1,5 +1,6 @@
 using Bizcord.Logging;
 using ChatService.Application;
+using ChatService.GraphQL;
 using ChatService.Infrastructure.Messaging;
 using ChatService.Infrastructure.Persistence;
 using ChatService.Infrastructure.Web;
@@ -36,6 +37,16 @@ builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 // Health
 builder.Services.AddHealthChecks();
 
+// GraphQL: BFF-style presentation layer next to REST, on top of the same application services
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<ChatQuery>()
+    .AddTypeExtension<ChatMessagesExtension>()
+    .AddMutationType<ChatMutation>()
+    .AddHttpRequestInterceptor<UserIdInterceptor>()
+    .AddApplicationService<ILogger<DomainErrorFilter>>()
+    .AddErrorFilter<DomainErrorFilter>();
+
 builder.Services.AddControllers();
 
 var app = builder.Build();
@@ -54,6 +65,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapHealthChecks("/health");
 app.MapControllers();
+app.MapGraphQL();
 
 app.Run();
 
