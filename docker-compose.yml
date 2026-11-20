@@ -1,8 +1,21 @@
 # Full stack: RabbitMQ + Postgres + ChatService + RealTimeCommunicationServer.
 # Run from the repo root: docker compose up --build
 # Must not run at the same time as the compose files under apps/ (same ports).
+volumes:
+  vault-data:
 
 services:
+  vault:
+    image: hashicorp/vault:1.21.0
+    ports:
+      - "127.0.0.1:8200:8200"
+    volumes:
+      - ./vault/config.hcl:/vault/config/config.hcl:ro,z
+      - vault-data:/vault/file
+    command: server
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+
   rabbitmq:
     image: rabbitmq:3-management
     ports:
