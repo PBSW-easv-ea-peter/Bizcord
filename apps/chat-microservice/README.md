@@ -39,7 +39,7 @@ Only requires Docker to be running: Postgres and RabbitMQ are started with Testc
 - `GET /chats` (my chats). Listed under "Later" in `docs/chatService.md`.
 - Outbox, so events are not lost when the broker is down. Today delivery is at-most-once.
 - Validation of `userId` against UserService, and a `user.deleted` event (see `docs/contracts.md`).
-- Without RabbitMQ, publish hangs for about 10 seconds per request while EasyNetQ retries. EasyNetQ also logs ~9 Error lines per failed publish.
+- Without RabbitMQ, publish gives up after `RabbitMq:PublishTimeout` (default 2 s) and logs "Publish timed out." as Error. The request still returns 201. EasyNetQ also logs a few Error lines per retry before that.
 - `MessageDeliveredConsumer` subscribes at startup, so ChatService does not start without RabbitMQ (compose waits for the broker's healthcheck). Retry/fallback belongs to week 44.
 - Payload in logs with a "safe version" of input/output data. This requires an allowlist/redaction strategy. Today only ids are logged.
 - An unhandled 500 may produce two Error lines (`DomainExceptionHandler` and `ExceptionHandlerMiddleware`). Not tested.

@@ -19,7 +19,9 @@ builder.Services.AddScoped<IMessageRepository, DapperMessageRepository>();
 builder.Services.AddScoped<IReceiptRepository, DapperReceiptRepository>();
 
 // Messaging
-builder.Services.AddChatMessaging(builder.Configuration.RabbitMqConnectionString());
+builder.Services.AddChatMessaging(
+    builder.Configuration.RabbitMqConnectionString(),
+    publishTimeout: builder.Configuration.GetValue<TimeSpan?>("RabbitMq:PublishTimeout"));
 builder.Services.AddHostedService<MessageDeliveredConsumer>();
 
 // Application
