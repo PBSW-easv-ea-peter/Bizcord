@@ -8,9 +8,9 @@ public class FileMessageSagaRepositoryTests
 {
     private static readonly DateTimeOffset Now = new(2026, 11, 18, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly DapperChatRepository _chats = new(TestDatabase.DataSource);
-    private readonly DapperMessageRepository _messages = new(TestDatabase.DataSource);
-    private readonly DapperFileMessageSagaRepository _sagas = new(TestDatabase.DataSource);
+    private readonly DapperChatRepository _chats = new(TestDatabase.Db);
+    private readonly DapperMessageRepository _messages = new(TestDatabase.Db);
+    private readonly DapperFileMessageSagaRepository _sagas = new(TestDatabase.Db);
 
     private async Task<(Chat Chat, Guid Sender, FileMessageSaga Saga)> StartSagaAsync(string? content = null)
     {
