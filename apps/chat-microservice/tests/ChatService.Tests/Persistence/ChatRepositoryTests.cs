@@ -8,7 +8,7 @@ public class ChatRepositoryTests
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly DapperChatRepository _repository = new(TestDatabase.DataSource);
+    private readonly DapperChatRepository _repository = new(TestDatabase.Db);
 
     [Fact]
     public async Task AddAsync_ThenGetAsync_RoundTripsChatAndParticipants()

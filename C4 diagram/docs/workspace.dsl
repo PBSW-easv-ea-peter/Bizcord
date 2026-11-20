@@ -37,6 +37,11 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
                 chatDb = container "ChatDB" "Contains chats, participants, messages and message receipts." "PostgreSQL" "Database"
             }
 
+            group "File" {
+                fileService = container "FileService" "Stores attached files and each user's storage quota (Standard/Premium). Participant in ChatService's file-message saga: reserves and releases quota on command." "ASP.NET Core Web API (Dapper, EasyNetQ)" "Service"
+                fileDb = container "FileDB" "Contains files (bytes + metadata, Temporary/Attached) and user quotas." "PostgreSQL" "Database"
+            }
+
             group "Engagement" {
                 engagementService = container "Engagement Service" "Handles likes, reactions etc." "" "Service"
                 engagementDb = container "EngagementDB" "Contains engagement information: server_id, message_id, user_id, reaction." "RDBMS" "Database"
@@ -65,6 +70,10 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
             // RabbitMQ sits "loose" in the system (not in a group) - it is shared infrastructure across
             // bounded contexts, not itself a context owned by any of the teams.
             rabbitMq = container "RabbitMQ" "Message broker for event-driven communication between microservices - broader than just notifications." "RabbitMQ" "Message Broker"
+
+            // Shared infrastructure like RabbitMQ. Runs as one node-level agent today (Kubernetes: DaemonSet);
+            // planned to become a per-pod sidecar before Kubernetes (docs/documentation/logging-sidecar.md).
+            logAgent = container "Log Agent" "Collects JSON logs from services that opt in with the label logging=fluentd, parses them into fields and forwards them. Output is its own stdout, standing in for a central log system." "Fluentd" "Log Agent"
         }
 
         // Relationships
@@ -86,6 +95,8 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
         userService -> userDb "Read/Write"
         channelService -> channelDb "Read/Write"
         chatService -> chatDb "Read/Write (Dapper)"
+        fileService -> fileDb "Read/Write (Dapper)"
+        client -> fileService "Upload/download files (gateway routes not added yet)"
         engagementService -> engagementDb "Read/Write"
 
         // RabbitMQ is used more broadly than notifications - services publish events to the broker,
@@ -96,10 +107,16 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
         rabbitMq -> chatService "Deliver: rtc.message-delivered"
         rabbitMq -> realTimeCommunicationService "Deliver: subscribed chat.* events"
         realTimeCommunicationService -> rabbitMq "Publish: rtc.message-delivered"
+        rabbitMq -> fileService "Deliver: file.reserve-quota, file.release-quota (saga commands)"
+        fileService -> rabbitMq "Publish: file.quota-reserved/-rejected/-released"
 
         // RTC bypasses the gateway (long-lived WebSockets), so it must validate the JWT itself.
         client -> realTimeCommunicationService "Connects (SignalR, /hubs/chat), bypasses gateway"
         realTimeCommunicationService -> client "Push notification"
+
+        // The services only write to stdout and do not know the agent exists - the agent reads Docker's log files.
+        logAgent -> chatService "Tails stdout logs (Docker json-file)"
+        logAgent -> realTimeCommunicationService "Tails stdout logs (Docker json-file)"
 
         // Component-level relationships for ChatService
         apiGateway -> chatsController "Create chats, add participants; GET /chats/{id} as aggregate"
@@ -179,6 +196,10 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
             element "Message Broker" {
                 shape Pipe
                 background #f5d76e
+            }
+            element "Log Agent" {
+                shape Component
+                background #d7dbdd
             }
         }
     }

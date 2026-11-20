@@ -7,8 +7,14 @@ public sealed class Message
     public Guid ChatId { get; }
     public Guid SenderUserId { get; }
 
-    /// <summary>Null when the message is deleted - the content is not kept after deletion.</summary>
+    /// <summary>
+    /// Null when the message is deleted - the content is not kept after deletion.
+    /// Can also be null for a message that only carries an attachment.
+    /// </summary>
     public MessageContent? Content { get; private set; }
+
+    /// <summary>A file in FileService. Will be set by the file-message saga (week 46) once the file's quota is reserved. Removed on delete.</summary>
+    public Attachment? Attachment { get; private set; }
     public DateTimeOffset SentAt { get; }
     public DateTimeOffset? EditedAt { get; private set; }
     public DateTimeOffset? DeletedAt { get; private set; }
@@ -16,12 +22,13 @@ public sealed class Message
     public bool IsDeleted => DeletedAt is not null;
 
     private Message(Guid id, Guid chatId, Guid senderUserId, MessageContent? content, DateTimeOffset sentAt,
-        DateTimeOffset? editedAt = null, DateTimeOffset? deletedAt = null)
+        DateTimeOffset? editedAt = null, DateTimeOffset? deletedAt = null, Attachment? attachment = null)
     {
         Id = id;
         ChatId = chatId;
         SenderUserId = senderUserId;
         Content = content;
+        Attachment = attachment;
         SentAt = sentAt;
         EditedAt = editedAt;
         DeletedAt = deletedAt;
@@ -35,10 +42,22 @@ public sealed class Message
         return new Message(Guid.CreateVersion7(now), chat.Id, senderUserId, content, now);
     }
 
+    /// <summary>
+    /// The text is optional when there is a file. Same rule as Send - checked again here, because the
+    /// sender may have left the chat while FileService was reserving quota.
+    /// </summary>
+    public static Message SendWithAttachment(Chat chat, Guid senderUserId, MessageContent? content, Attachment attachment, DateTimeOffset now)
+    {
+        if (!chat.CanSend(senderUserId))
+            throw new NotAllowedException("Only active participants can send messages.");
+
+        return new Message(Guid.CreateVersion7(now), chat.Id, senderUserId, content, now, attachment: attachment);
+    }
+
     /// <summary>Rehydration from persistence - does not run creation invariants.</summary>
     internal static Message Restore(Guid id, Guid chatId, Guid senderUserId, MessageContent? content, DateTimeOffset sentAt,
-        DateTimeOffset? editedAt = null, DateTimeOffset? deletedAt = null) =>
-        new(id, chatId, senderUserId, content, sentAt, editedAt, deletedAt);
+        DateTimeOffset? editedAt = null, DateTimeOffset? deletedAt = null, Attachment? attachment = null) =>
+        new(id, chatId, senderUserId, content, sentAt, editedAt, deletedAt, attachment);
 
     /// <summary>Sender only, and only while they are still an active participant. A deleted message cannot be edited.</summary>
     public void Edit(Chat chat, Guid requestedByUserId, MessageContent content, DateTimeOffset now)
@@ -63,7 +82,9 @@ public sealed class Message
         if (IsDeleted)
             return false;
 
+        // The file reference goes too.
         Content = null;
+        Attachment = null;
         DeletedAt = now;
         return true;
     }

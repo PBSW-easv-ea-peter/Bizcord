@@ -6,6 +6,13 @@
   <Folder Name="/apps/chat-microservice/tests/">
     <Project Path="apps/chat-microservice/tests/ChatService.Tests/ChatService.Tests.csproj" />
   </Folder>
+  <Folder Name="/apps/file-microservice/" />
+  <Folder Name="/apps/file-microservice/src/">
+    <Project Path="apps/file-microservice/src/FileService/FileService.csproj" />
+  </Folder>
+  <Folder Name="/apps/file-microservice/tests/">
+    <Project Path="apps/file-microservice/tests/FileService.Tests/FileService.Tests.csproj" />
+  </Folder>
   <Folder Name="/apps/real-time-communication-microservice/" />
   <Folder Name="/apps/real-time-communication-microservice/src/">
     <Project Path="apps/real-time-communication-microservice/src/RealTimeCommunicationServer/RealTimeCommunicationServer.csproj" />

@@ -22,7 +22,14 @@ public sealed record MessageResponse(
     string? Content,
     DateTimeOffset SentAt,
     DateTimeOffset? EditedAt,
-    DateTimeOffset? DeletedAt);
+    DateTimeOffset? DeletedAt,
+    AttachmentResponse? Attachment = null);
+
+/// <summary>Download the file from FileService: GET /files/{fileId}.</summary>
+public sealed record AttachmentResponse(
+    Guid FileId,
+    string FileName,
+    long SizeBytes);
 
 public sealed record ReceiptResponse(
     Guid UserId,

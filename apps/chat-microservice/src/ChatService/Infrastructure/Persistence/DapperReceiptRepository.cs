@@ -5,15 +5,12 @@ using Npgsql;
 
 namespace ChatService.Infrastructure.Persistence;
 
-public sealed class DapperReceiptRepository(NpgsqlDataSource dataSource) : IReceiptRepository
+public sealed class DapperReceiptRepository(ChatDb db) : IReceiptRepository
 {
-    public async Task<int> MarkSeenUpToAsync(Guid userId, Message upTo, DateTimeOffset now, CancellationToken cancellationToken = default)
-    {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-
-        // Set-based version of MessageReceipt.Create + MarkSeen:
-        // no receipt on one's own messages, and seen_at is never overwritten.
-        return await connection.ExecuteAsync(new CommandDefinition(
+    // Set-based version of MessageReceipt.Create + MarkSeen:
+    // no receipt on one's own messages, and seen_at is never overwritten.
+    public Task<int> MarkSeenUpToAsync(Guid userId, Message upTo, DateTimeOffset now, CancellationToken cancellationToken = default) =>
+        db.RunAsync(connection => connection.ExecuteAsync(new CommandDefinition(
             """
             insert into message_receipts (message_id, user_id, seen_at)
             select m.id, @UserId, @Now
@@ -33,17 +30,13 @@ public sealed class DapperReceiptRepository(NpgsqlDataSource dataSource) : IRece
                 UpToSentAt = DbTime.ToDb(upTo.SentAt),
                 UpToId = upTo.Id
             },
-            cancellationToken: cancellationToken));
-    }
+            cancellationToken: cancellationToken)), cancellationToken);
 
-    public async Task<int> MarkDeliveredAsync(Guid messageId, IReadOnlyCollection<Guid> userIds, DateTimeOffset at, CancellationToken cancellationToken = default)
-    {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-
-        // Set-based version of MessageReceipt.Create + MarkDelivered:
-        // only active participants in the chat (the event is external input - don't trust the list), no receipt
-        // for the sender, and delivered_at is never overwritten (seen_at is left untouched).
-        return await connection.ExecuteAsync(new CommandDefinition(
+    // Set-based version of MessageReceipt.Create + MarkDelivered:
+    // only active participants in the chat (the event is external input - don't trust the list), no receipt
+    // for the sender, and delivered_at is never overwritten (seen_at is left untouched).
+    public Task<int> MarkDeliveredAsync(Guid messageId, IReadOnlyCollection<Guid> userIds, DateTimeOffset at, CancellationToken cancellationToken = default) =>
+        db.RunAsync(connection => connection.ExecuteAsync(new CommandDefinition(
             """
             insert into message_receipts (message_id, user_id, delivered_at)
             select m.id, u.user_id, @At
@@ -60,20 +53,17 @@ public sealed class DapperReceiptRepository(NpgsqlDataSource dataSource) : IRece
             where message_receipts.delivered_at is null
             """,
             new { MessageId = messageId, UserIds = userIds.ToArray(), At = DbTime.ToDb(at) },
-            cancellationToken: cancellationToken));
-    }
+            cancellationToken: cancellationToken)), cancellationToken);
 
     public async Task<IReadOnlyList<MessageReceipt>> GetForMessageAsync(Guid messageId, CancellationToken cancellationToken = default)
     {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-
-        var rows = await connection.QueryAsync<ReceiptRow>(new CommandDefinition(
+        var rows = await db.RunAsync(connection => connection.QueryAsync<ReceiptRow>(new CommandDefinition(
             """
             select message_id as MessageId, user_id as UserId, delivered_at as DeliveredAt, seen_at as SeenAt
             from message_receipts
             where message_id = @MessageId
             """,
-            new { MessageId = messageId }, cancellationToken: cancellationToken));
+            new { MessageId = messageId }, cancellationToken: cancellationToken)), cancellationToken);
 
         return rows
             .Select(r => MessageReceipt.Restore(r.MessageId, r.UserId, DbTime.FromDb(r.DeliveredAt), DbTime.FromDb(r.SeenAt)))
