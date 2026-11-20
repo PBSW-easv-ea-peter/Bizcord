@@ -3,6 +3,7 @@
 # Must not run at the same time as the compose files under apps/ (same ports).
 volumes:
   vault-data:
+  fluentd-pos:
 
 services:
   vault:
@@ -144,5 +145,3 @@ services:
        - /var/lib/docker/containers:/fluentd/log/containers:ro
        - fluentd-pos:/fluentd/pos
 
-volumes:
-  fluentd-pos:
