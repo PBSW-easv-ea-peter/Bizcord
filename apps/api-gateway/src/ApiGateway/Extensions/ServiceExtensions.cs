@@ -26,7 +26,7 @@ public static class ServiceExtensions
         var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>()
                          ?? throw new InvalidOperationException("Jwt configuration is required.");
 
-        var signingKey = jwtOptions.AuthenticationProviderKey;
+        // Signing key will be retrieved from Vault at startup
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
@@ -44,8 +44,8 @@ public static class ServiceExtensions
                     ValidateLifetime = true,
 
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(signingKey)),
+                    // Signing key will be set at startup from Vault
+                    IssuerSigningKey = null!,
 
                     NameClaimType = "sub",
                     RoleClaimType = "role",
@@ -58,6 +58,12 @@ public static class ServiceExtensions
 
         services.AddOcelot(configuration);
 
+        return services;
+    }
+
+    public static IServiceCollection AddVaultSecretProvider(this IServiceCollection services)
+    {
+        services.AddSingleton<VaultSecretProvider>();
         return services;
     }
 }

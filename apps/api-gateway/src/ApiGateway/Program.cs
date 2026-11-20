@@ -1,3 +1,9 @@
+using System.Text;
+using Bizcord.ApiGateway.Application.Services;
+using Bizcord.ApiGateway.Extensions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Bizcord.ApiGateway.Application.Services;
 using Bizcord.ApiGateway.Extensions;
 using Microsoft.OpenApi;
@@ -11,6 +17,9 @@ builder.Configuration.AddOcelot("Configuration", builder.Environment);
 
 builder.Services.Configure<JwtOptions>(
     builder.Configuration.GetSection("Jwt"));
+
+// Add Vault secret provider
+builder.Services.AddVaultSecretProvider();
 
 builder.Services.AddJwtTokenService();
 builder.Services.AddControllers();
@@ -35,6 +44,20 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddApiGatewayServices(builder.Configuration);
 
 var app = builder.Build();
+
+// Retrieve JWT signing key from Vault and configure authentication
+var vaultProvider = app.Services.GetRequiredService<VaultSecretProvider>();
+var jwtSigningKey = await vaultProvider.GetJwtSigningKeyAsync();
+
+// Update JWT options with the signing key from Vault
+var jwtOptions = app.Services.GetRequiredService<IOptions<JwtOptions>>().Value;
+jwtOptions.AuthenticationProviderKey = jwtSigningKey;
+
+// Configure the JWT bearer options with the signing key
+var jwtBearerOptions = app.Services.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>();
+var options = jwtBearerOptions.Get(JwtBearerDefaults.AuthenticationScheme);
+options.TokenValidationParameters.IssuerSigningKey = new SymmetricSecurityKey(
+    Encoding.UTF8.GetBytes(jwtSigningKey));
 
 app.MapGet("/custom-openapi.yaml", async context =>
 {
