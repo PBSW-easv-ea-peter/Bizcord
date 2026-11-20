@@ -8,9 +8,9 @@ public class ReceiptRepositoryTests
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly DapperChatRepository _chats = new(TestDatabase.DataSource);
-    private readonly DapperMessageRepository _messages = new(TestDatabase.DataSource);
-    private readonly DapperReceiptRepository _receipts = new(TestDatabase.DataSource);
+    private readonly DapperChatRepository _chats = new(TestDatabase.Db);
+    private readonly DapperMessageRepository _messages = new(TestDatabase.Db);
+    private readonly DapperReceiptRepository _receipts = new(TestDatabase.Db);
 
     private readonly Guid _alice = Guid.NewGuid();
     private readonly Guid _bob = Guid.NewGuid();
