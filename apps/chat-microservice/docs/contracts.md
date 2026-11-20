@@ -38,7 +38,11 @@ All calls require the `X-User-Id` header (the user performing the action). It wi
 | `POST /chats/{chatId}/file-messages` | `{ "fileId", "content"? }` | 202 Accepted + `Location` – starts the saga "send a message with a file" ([design](../../../docs/documentation/saga-file-attachment.md)). `fileId` comes from FileService's `POST /files`. 403 if not an active participant |
 | `GET /chats/{chatId}/file-messages/{sagaId}` | | 200 – sender only (404 for others). `status`: `AwaitingQuota`, `Completed` (then `messageId` is set), `Compensating`, `Failed` or `CompensationFailed` (then `reason` is set) |
 
-Error codes: `400` invalid input · `403` not an (active) participant, missing role or not the sender · `404` unknown chat/message · `409` already exists or is deleted.
+Error codes: `400` invalid input · `403` not an (active) participant, missing role or not the sender · `404` unknown chat/message · `409` already exists or is deleted · `503` the database is unavailable.
+
+**503 Service Unavailable** can be returned by every endpoint. It is temporary: the request may be retried, while 4xx should not be. ChatService answers 503 in two cases:
+- The database did not answer within a few seconds. No `Retry-After`. A write may still have been saved, so check (e.g. fetch messages) before resending – there is no idempotency key yet.
+- Repeated failures have opened the circuit breaker, and ChatService does not call the database at all. The response has a `Retry-After` header (seconds) – retrying sooner gets an immediate 503.
 
 A message looks like this (`editedAt` and `deletedAt` are `null` until it happens, and `content` is `null` when the message is deleted or only has a file). `attachment` (new field, non-breaking) is `null` unless the message was sent with a file - download it from FileService (`GET /files/{fileId}`):
 ```json
@@ -117,6 +121,6 @@ New fields are added without notice and are non-breaking. A breaking change (rem
 |---|---|---|
 | UserService | Valid `userId`s. Today we trust `X-User-Id` and the ids we receive | Assumed |
 | UserService | Event when a user is deleted/deactivated (e.g. `user.deleted`), so participations can be ended | Wanted |
-| RTC | `rtc.message-delivered` (`messageId`, `deliveredToUserIds`, `deliveredAt`) → sets `deliveredAt` on receipts. Subscription `chat-service`. See [RTC's contract](../../real-time-communication-microservice/docs/contracts.md) | Delivered – tested in `MessageDeliveredConsumerContractTests` |
+| RTC | `rtc.message-delivered` (`messageId`, `deliveredToUserIds`, `deliveredAt`) → sets `deliveredAt` on receipts. Subscription `chat-service`. See [RTC's contract](../../real-time-communication-microservice/docs/contracts.md). If the database is unavailable, the event ends up in EasyNetQ's error queue and is not retried | Delivered – tested in `MessageDeliveredConsumerContractTests` |
 | FileService | The saga messages `file.reserve-quota`/`file.release-quota` (we send) and `file.quota-reserved`/`-rejected`/`-released` (we consume, subscription `chat-service`). See [FileService's contract](../../file-microservice/docs/contracts.md) | Delivered – tested in `FileSagaContractTests` |
 | UserAuth | Token instead of `X-User-Id` | Later |

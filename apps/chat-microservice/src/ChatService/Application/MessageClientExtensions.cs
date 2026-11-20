@@ -14,6 +14,10 @@ internal static class MessageClientExtensions
         {
             await client.PublishAsync(message, CancellationToken.None);
         }
+        catch (TimeoutException ex)
+        {
+            logger.Error("Publish timed out. The change is saved, but the event is lost.", new { EventType = typeof(T).Name }, ex);
+        }
         catch (Exception ex)
         {
             logger.Error("Failed to publish event. The change is saved, but the event is lost.", new { EventType = typeof(T).Name }, ex);

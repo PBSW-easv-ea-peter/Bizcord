@@ -1,27 +1,23 @@
 using Bizcord.Logging;
 using ChatService.Application;
 using ChatService.Contracts;
+using ChatService.GraphQL;
 using ChatService.Infrastructure.Messaging;
 using ChatService.Infrastructure.Persistence;
 using ChatService.Infrastructure.Web;
-using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Logging: template JSON to stdout (libs/Bizcord.Logging)
 builder.AddBizcordLogging(builder.Configuration["Logging:ServiceName"] ?? "ChatService");
 
-// Persistence
-var chatDbConnectionString = builder.Configuration.GetConnectionString("ChatDb")
-    ?? throw new InvalidOperationException("Connection string 'ChatDb' is missing.");
-builder.Services.AddSingleton(NpgsqlDataSource.Create(chatDbConnectionString));
-builder.Services.AddScoped<IChatRepository, DapperChatRepository>();
-builder.Services.AddScoped<IMessageRepository, DapperMessageRepository>();
-builder.Services.AddScoped<IReceiptRepository, DapperReceiptRepository>();
-builder.Services.AddScoped<IFileMessageSagaRepository, DapperFileMessageSagaRepository>();
+// Persistence: short timeouts + circuit breaker (ChatDb)
+builder.Services.AddChatDb(builder.Configuration);
 
 // Messaging
-builder.Services.AddChatMessaging(builder.Configuration.RabbitMqConnectionString());
+builder.Services.AddChatMessaging(
+    builder.Configuration.RabbitMqConnectionString(),
+    publishTimeout: builder.Configuration.GetValue<TimeSpan?>("RabbitMq:PublishTimeout"));
 builder.Services.AddHostedService<MessageDeliveredConsumer>();
 builder.Services.AddHostedService<FileSagaReplyConsumer>();
 builder.Services.AddHostedService<FileSagaTimeoutService>();
@@ -49,6 +45,16 @@ builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 // Health
 builder.Services.AddHealthChecks();
 
+// GraphQL: BFF-style presentation layer next to REST, on top of the same application services
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<ChatQuery>()
+    .AddTypeExtension<ChatMessagesExtension>()
+    .AddMutationType<ChatMutation>()
+    .AddHttpRequestInterceptor<UserIdInterceptor>()
+    .AddApplicationService<ILogger<DomainErrorFilter>>()
+    .AddErrorFilter<DomainErrorFilter>();
+
 builder.Services.AddControllers();
 
 var app = builder.Build();
@@ -67,6 +73,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapHealthChecks("/health");
 app.MapControllers();
+app.MapGraphQL();
 
 app.Run();
 

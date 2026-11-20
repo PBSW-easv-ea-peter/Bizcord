@@ -1,11 +1,10 @@
 using ChatService.Application;
 using ChatService.Domain;
 using Dapper;
-using Npgsql;
 
 namespace ChatService.Infrastructure.Persistence;
 
-public sealed class DapperFileMessageSagaRepository(NpgsqlDataSource dataSource) : IFileMessageSagaRepository
+public sealed class DapperFileMessageSagaRepository(ChatDb db) : IFileMessageSagaRepository
 {
     private const string SelectColumns =
         "select saga_id as SagaId, chat_id as ChatId, sender_user_id as SenderUserId, file_id as FileId, content, status, " +
@@ -22,20 +21,15 @@ public sealed class DapperFileMessageSagaRepository(NpgsqlDataSource dataSource)
 
     public async Task<FileMessageSaga?> GetAsync(Guid sagaId, CancellationToken cancellationToken = default)
     {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-
-        var row = await connection.QuerySingleOrDefaultAsync<SagaRow>(new CommandDefinition(
+        var row = await db.RunAsync(connection => connection.QuerySingleOrDefaultAsync<SagaRow>(new CommandDefinition(
             $"{SelectColumns} where saga_id = @SagaId",
-            new { SagaId = sagaId }, cancellationToken: cancellationToken));
+            new { SagaId = sagaId }, cancellationToken: cancellationToken)), cancellationToken);
 
         return row is null ? null : ToDomain(row);
     }
 
-    public async Task AddAsync(FileMessageSaga saga, CancellationToken cancellationToken = default)
-    {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-
-        await connection.ExecuteAsync(new CommandDefinition(
+    public Task AddAsync(FileMessageSaga saga, CancellationToken cancellationToken = default) =>
+        db.RunAsync(connection => connection.ExecuteAsync(new CommandDefinition(
             """
             insert into file_message_sagas (saga_id, chat_id, sender_user_id, file_id, content, status,
                                             message_id, failure_reason, compensation_attempts, started_at, updated_at, completed_at)
@@ -57,44 +51,39 @@ public sealed class DapperFileMessageSagaRepository(NpgsqlDataSource dataSource)
                 UpdatedAt = DbTime.ToDb(saga.UpdatedAt),
                 CompletedAt = DbTime.ToDb(saga.CompletedAt)
             },
-            cancellationToken: cancellationToken));
-    }
+            cancellationToken: cancellationToken)), cancellationToken);
 
     public async Task<bool> UpdateAsync(FileMessageSaga saga, FileMessageSagaStatus expectedStatus, CancellationToken cancellationToken = default)
     {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-
-        var updated = await connection.ExecuteAsync(new CommandDefinition(
-            UpdateSql, UpdateParameters(saga, expectedStatus), cancellationToken: cancellationToken));
+        var updated = await db.RunAsync(connection => connection.ExecuteAsync(new CommandDefinition(
+            UpdateSql, UpdateParameters(saga, expectedStatus), cancellationToken: cancellationToken)), cancellationToken);
 
         return updated == 1;
     }
 
-    public async Task<bool> CompleteWithMessageAsync(FileMessageSaga saga, FileMessageSagaStatus expectedStatus, Message message, CancellationToken cancellationToken = default)
-    {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-
-        // Saga first: if the timeout job has already started compensating, no message may be saved.
-        var updated = await connection.ExecuteAsync(new CommandDefinition(
-            UpdateSql, UpdateParameters(saga, expectedStatus), transaction, cancellationToken: cancellationToken));
-
-        if (updated != 1)
+    public Task<bool> CompleteWithMessageAsync(FileMessageSaga saga, FileMessageSagaStatus expectedStatus, Message message, CancellationToken cancellationToken = default) =>
+        db.RunAsync(async connection =>
         {
-            await transaction.RollbackAsync(cancellationToken);
-            return false;
-        }
+            await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
-        await DapperMessageRepository.InsertAsync(connection, transaction, message, cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        return true;
-    }
+            // Saga first: if the timeout job has already started compensating, no message may be saved.
+            var updated = await connection.ExecuteAsync(new CommandDefinition(
+                UpdateSql, UpdateParameters(saga, expectedStatus), transaction, cancellationToken: cancellationToken));
+
+            if (updated != 1)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return false;
+            }
+
+            await DapperMessageRepository.InsertAsync(connection, transaction, message, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        }, cancellationToken);
 
     public async Task<IReadOnlyList<FileMessageSaga>> GetStaleAsync(DateTimeOffset notUpdatedSince, int limit, CancellationToken cancellationToken = default)
     {
-        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-
-        var rows = await connection.QueryAsync<SagaRow>(new CommandDefinition(
+        var rows = await db.RunAsync(connection => connection.QueryAsync<SagaRow>(new CommandDefinition(
             $"""
              {SelectColumns}
              where status in ('AwaitingQuota', 'Compensating') and updated_at < @NotUpdatedSince
@@ -102,7 +91,7 @@ public sealed class DapperFileMessageSagaRepository(NpgsqlDataSource dataSource)
              limit @Limit
              """,
             new { NotUpdatedSince = DbTime.ToDb(notUpdatedSince), Limit = limit },
-            cancellationToken: cancellationToken));
+            cancellationToken: cancellationToken)), cancellationToken);
 
         return rows.Select(ToDomain).ToList();
     }
