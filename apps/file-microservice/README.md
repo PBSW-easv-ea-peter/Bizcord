@@ -31,6 +31,5 @@ Only requires Docker - Postgres is started with Testcontainers.
 ## Not implemented
 - Cleanup of `Temporary` files that are never sent.
 - Access check on download (FileService doesn't know chat membership).
-- Giving the quota back when a message with a file is deleted in ChatService.
 - Tier from UserService - seeded in `user_quotas` today.
 - Blob storage - the bytes are a `bytea` column, fine for a demo only.

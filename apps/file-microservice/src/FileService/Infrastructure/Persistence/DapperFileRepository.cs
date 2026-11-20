@@ -145,6 +145,30 @@ public sealed class DapperFileRepository(NpgsqlDataSource dataSource) : IFileRep
         return true;
     }
 
+    public async Task<bool> DeleteAttachedAsync(Guid fileId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        // Only attached files - a temporary file is still in a saga, which owns its cleanup.
+        var deleted = await connection.QuerySingleOrDefaultAsync<DeletedFileRow>(new CommandDefinition(
+            """
+            delete from files where id = @FileId and status = 'Attached'
+            returning owner_user_id as OwnerUserId, size_bytes as SizeBytes
+            """,
+            new { FileId = fileId }, transaction, cancellationToken: cancellationToken));
+
+        if (deleted is not null)
+        {
+            await connection.ExecuteAsync(new CommandDefinition(
+                "update user_quotas set used_bytes = used_bytes - @Size where user_id = @UserId",
+                new { UserId = deleted.OwnerUserId, Size = deleted.SizeBytes }, transaction, cancellationToken: cancellationToken));
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return deleted is not null;
+    }
+
     private static async Task<UserQuota> GetQuotaAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid userId, CancellationToken cancellationToken) =>
         await connection.QuerySingleAsync<UserQuota>(new CommandDefinition(
             "select user_id as UserId, tier, limit_bytes as LimitBytes, used_bytes as UsedBytes from user_quotas where user_id = @UserId",
@@ -164,5 +188,11 @@ public sealed class DapperFileRepository(NpgsqlDataSource dataSource) : IFileRep
         public StoredFile ToDomain() => new(
             Id, OwnerUserId, FileName, ContentType, SizeBytes, Enum.Parse<FileStatus>(Status), SagaId,
             new DateTimeOffset(DateTime.SpecifyKind(UploadedAt, DateTimeKind.Utc)));
+    }
+
+    private sealed class DeletedFileRow
+    {
+        public Guid OwnerUserId { get; init; }
+        public long SizeBytes { get; init; }
     }
 }

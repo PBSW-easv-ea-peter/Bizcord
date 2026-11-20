@@ -57,6 +57,9 @@ public sealed class MessageAppService(
         var chat = await GetChatAsync(chatId, cancellationToken);
         var message = await GetMessageInChatAsync(chat.Id, messageId, cancellationToken);
 
+        // Read before Delete, which removes the reference.
+        var attachmentFileId = message.Attachment?.FileId;
+
         if (!message.Delete(chat, requestedByUserId, time.GetUtcNowInMicroseconds()))
             return;
 
@@ -64,10 +67,11 @@ public sealed class MessageAppService(
         if (!await messages.UpdateAsync(message, cancellationToken))
             return;
 
-        logger.Information("Message deleted.", new { ChatId = chat.Id, MessageId = message.Id });
+        logger.Information("Message deleted.", new { ChatId = chat.Id, MessageId = message.Id, AttachmentFileId = attachmentFileId });
 
+        // Not a saga: FileService can't refuse a deletion, so there is nothing to compensate - it just reacts.
         await messageClient.TryPublishAsync(new MessageDeleted(
-            message.Id, chat.Id, message.DeletedAt!.Value, Recipients(chat, message.SenderUserId)), logger);
+            message.Id, chat.Id, message.DeletedAt!.Value, Recipients(chat, message.SenderUserId), attachmentFileId), logger);
     }
 
     public async Task<IReadOnlyList<Message>> GetPageAsync(
