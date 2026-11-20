@@ -17,7 +17,7 @@ Same conventions as [ChatService's contract](../../chat-microservice/docs/contra
 ```
 
 ## Saga messages (RabbitMQ)
-FileService is a participant in ChatService's "send a message with a file" saga (week 46 - ChatService's orchestrator and the design document follow in a separate PR). FileService owns these names. Each has its own topic exchange with the logical name, and the `type` header has the same name. FileService subscribes as `file-service`.
+FileService is a participant in ChatService's "send a message with a file" saga ([design](../../../docs/documentation/saga-file-attachment.md)). FileService owns these names. Each has its own topic exchange with the logical name, and the `type` header has the same name. FileService subscribes as `file-service`.
 
 Every message carries `sagaId`, which the orchestrator uses to match the reply to its saga.
 
@@ -58,7 +58,7 @@ At-most-once, like the rest of the system: replies are published after the local
 ### Known consumers
 | Consumer | Subscription | Messages |
 |---|---|---|
-| ChatService (coming in the saga PR) | `chat-service` | `file.quota-reserved`, `file.quota-rejected`, `file.quota-released`. Sends `file.reserve-quota` and `file.release-quota` |
+| ChatService | `chat-service` | `file.quota-reserved`, `file.quota-rejected`, `file.quota-released`. Sends `file.reserve-quota` and `file.release-quota` |
 
 ## What FileService needs from others
 | From | What | Status |

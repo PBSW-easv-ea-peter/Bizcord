@@ -46,6 +46,10 @@ public sealed class ChatApiFactory : WebApplicationFactory<Program>
 
             // The consumer would connect to RabbitMQ on startup - it is tested in MessageDeliveredConsumerTests.
             services.Remove(services.Single(descriptor => descriptor.ImplementationType == typeof(MessageDeliveredConsumer)));
+            services.Remove(services.Single(descriptor => descriptor.ImplementationType == typeof(FileSagaReplyConsumer)));
+
+            // The API tests drive the saga by hand - a timer in the background would make them flaky.
+            services.Remove(services.Single(descriptor => descriptor.ImplementationType == typeof(FileSagaTimeoutService)));
         });
     }
 }

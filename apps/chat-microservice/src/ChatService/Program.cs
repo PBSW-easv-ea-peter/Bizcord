@@ -1,5 +1,6 @@
 using Bizcord.Logging;
 using ChatService.Application;
+using ChatService.Contracts;
 using ChatService.GraphQL;
 using ChatService.Infrastructure.Messaging;
 using ChatService.Infrastructure.Persistence;
@@ -18,11 +19,18 @@ builder.Services.AddChatMessaging(
     builder.Configuration.RabbitMqConnectionString(),
     publishTimeout: builder.Configuration.GetValue<TimeSpan?>("RabbitMq:PublishTimeout"));
 builder.Services.AddHostedService<MessageDeliveredConsumer>();
+builder.Services.AddHostedService<FileSagaReplyConsumer>();
+builder.Services.AddHostedService<FileSagaTimeoutService>();
 
 // Application
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ChatAppService>();
 builder.Services.AddScoped<MessageAppService>();
+builder.Services.AddScoped<FileMessageSagaOrchestrator>();
+// The orchestrator is the handler for every reply in the saga - same instance per scope.
+builder.Services.AddScoped<IMessageHandler<QuotaReserved>>(sp => sp.GetRequiredService<FileMessageSagaOrchestrator>());
+builder.Services.AddScoped<IMessageHandler<QuotaRejected>>(sp => sp.GetRequiredService<FileMessageSagaOrchestrator>());
+builder.Services.AddScoped<IMessageHandler<QuotaReleased>>(sp => sp.GetRequiredService<FileMessageSagaOrchestrator>());
 
 // OpenAPI
 builder.Services.AddOpenApi();

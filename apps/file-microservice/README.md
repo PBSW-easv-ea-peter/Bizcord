@@ -1,8 +1,8 @@
 # File Context (FileService)
 
 Stores files that users attach to messages, and each user's storage quota (Standard 20 MB, Premium 1 GB).
-Added in week 46 as the participant in the saga "a user sends a file that turns out to be too large"
-(ChatService is the orchestrator). Contract (REST + saga messages): [docs/contracts.md](docs/contracts.md)
+Added in week 46 as the participant in the saga "a user sends a file that turns out to be too large":
+**[docs/documentation/saga-file-attachment.md](../../docs/documentation/saga-file-attachment.md)**. Contract (REST + saga messages): [docs/contracts.md](docs/contracts.md)
 
 ## Structure
 ```

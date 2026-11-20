@@ -13,3 +13,6 @@ public sealed record AddParticipantRequest([Required] Guid? UserId);
 public sealed record SendMessageRequest(string Content);
 
 public sealed record EditMessageRequest(string Content);
+
+/// <summary>FileId comes from FileService's POST /files. Content is optional when a file is attached.</summary>
+public sealed record SendFileMessageRequest([Required] Guid? FileId, string? Content);
