@@ -1,0 +1,72 @@
+@model Bizcord.Models.MessageList
+@using Bizcord.Models
+@*
+    One page of messages (oldest first). Used both when the chat is opened and when "Vis ældre beskeder" loads another page.
+    The button remembers the id of the oldest message - it is the cursor for the next page.
+*@
+@if (Model.HasOlder && Model.Messages.Count > 0)
+{
+    <button type="button" class="btn btn-sm btn-outline-light msg-load-older" data-before="@Model.Messages[0].Id">
+        <i class="bi bi-arrow-up" aria-hidden="true"></i> Vis ældre beskeder
+    </button>
+}
+@foreach (var message in Model.Messages)
+{
+    var mine = message.SenderUserId == Model.CurrentUserId;
+    <div class="msg @(mine ? "msg-mine" : "") @(message.IsDeleted ? "msg-deleted" : "")">
+        @if (!mine)
+        {
+            <span class="msg-sender">@TestUsers.NameOf(message.SenderUserId)</span>
+        }
+        @if (message.IsDeleted)
+        {
+            <!-- Deleted: the message stays, so the conversation still makes sense, but the content is gone -->
+            <div class="msg-bubble"><i class="bi bi-trash3" aria-hidden="true"></i> Beskeden er slettet</div>
+        }
+        else
+        {
+            <div class="msg-bubble">
+                @if (message.Attachment is { } file)
+                {
+                    <!-- Download needs a gateway route to FileService - for now only the name is shown -->
+                    <div class="msg-attachment">
+                        <i class="bi bi-paperclip" aria-hidden="true"></i> @file.FileName
+                        <small>(@MessageList.FormatSize(file.SizeBytes))</small>
+                    </div>
+                }
+                @message.Content
+            </div>
+        }
+        <div class="msg-meta">
+            <time class="msg-time" datetime="@message.SentAt.ToString("o")">@MessageList.FormatTime(message.SentAt)</time>
+            @if (message.IsEdited && !message.IsDeleted)
+            {
+                <span class="msg-edited">(redigeret)</span>
+            }
+            @if (mine && !message.IsDeleted && message.Content is not null)
+            {
+                <!-- Edit your own message. <details> opens and closes the form without JavaScript -->
+                <details class="msg-edit">
+                    <summary class="msg-delete" title="Rediger besked" aria-label="Rediger besked">
+                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                    </summary>
+                    <form method="post" asp-page="/Chat" asp-page-handler="EditMessage" asp-route-id="@Model.ChatId" class="msg-edit-form">
+                        <input type="hidden" name="messageId" value="@message.Id" />
+                        <textarea name="editedContent" rows="2" maxlength="4000" class="form-control form-control-sm">@message.Content</textarea>
+                        <button type="submit" class="btn btn-sm btn-primary">Gem</button>
+                    </form>
+                </details>
+            }
+            @if (mine && !message.IsDeleted)
+            {
+                <!-- Only your own messages can be deleted (ChatService enforces it too) -->
+                <form method="post" asp-page="/Chat" asp-page-handler="DeleteMessage" asp-route-id="@Model.ChatId" class="msg-delete-form">
+                    <input type="hidden" name="messageId" value="@message.Id" />
+                    <button type="submit" class="msg-delete" title="Slet besked" aria-label="Slet besked">
+                        <i class="bi bi-trash3" aria-hidden="true"></i>
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+}

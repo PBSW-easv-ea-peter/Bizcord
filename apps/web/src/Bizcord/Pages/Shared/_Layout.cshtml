@@ -1,0 +1,93 @@
+﻿<!DOCTYPE html>
+<html lang="da" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Bizcord</title>
+    <script type="importmap"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Bizcord.styles.css" asp-append-version="true" />
+</head>
+@inject Bizcord.Models.CurrentUser CurrentUser
+@{
+    var active = ViewData["ActiveNav"] as string;
+
+    // After switching user: stay on the same page, but go from an open chat back to the list,
+    // because the new user may not be in that chat
+    var path = Context.Request.Path;
+    var returnUrl = path.StartsWithSegments("/Chat") ? "/Chat" : path.Value + Context.Request.QueryString;
+}
+<body>
+    <div class="bz-app">
+        <aside class="bz-sidebar">
+            <a class="bz-brand" asp-page="/Index" aria-label="Bizcord forside">
+                <img src="~/img/logo-icon.png" alt="" />
+                <span>Biz<span class="brand-gradient">cord</span></span>
+            </a>
+
+            <nav class="bz-nav">
+                <a class="bz-nav-link @(active == "Kanaler" ? "active" : "")" asp-page="/Index">
+                    <i class="bi bi-hash" aria-hidden="true"></i> Kanaler
+                </a>
+                <a class="bz-nav-link @(active == "Chat" ? "active" : "")" asp-page="/Chat">
+                    <i class="bi bi-chat-dots" aria-hidden="true"></i> Chat
+                </a>
+                <a class="bz-nav-link" href="#" aria-disabled="true">
+                    <i class="bi bi-person" aria-hidden="true"></i> Profil
+                </a>
+            </nav>
+        </aside>
+
+        <div class="bz-main">
+            <header class="bz-topbar">
+                <button type="button" class="bz-icon-btn" aria-label="Notifikationer">
+                    <i class="bi bi-bell" aria-hidden="true"></i>
+                </button>
+                <!-- Dev login: switch between test users (there is no UserService yet) -->
+                <div class="dropdown">
+                    <button type="button" class="bz-user-btn" data-bs-toggle="dropdown" aria-expanded="false"
+                            aria-label="Logget ind som @CurrentUser.Name. Skift bruger">
+                        <span class="bz-user-name">@CurrentUser.Name</span>
+                        <span class="bz-icon-btn bz-avatar">
+                            <i class="bi bi-person-circle" aria-hidden="true"></i>
+                            <span class="bz-online" aria-hidden="true"></span>
+                        </span>
+                        <i class="bi bi-chevron-down small" aria-hidden="true"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end bz-user-menu">
+                        <li><h6 class="dropdown-header">Log ind som (testbrugere)</h6></li>
+                        @foreach (var user in Bizcord.Models.TestUsers.CanLogIn)
+                        {
+                            var isMe = user.Id == CurrentUser.Id;
+                            <li>
+                                <a class="dropdown-item @(isMe ? "active" : "")" aria-current="@(isMe ? "true" : null)"
+                                   href="/switch-user/@user.Id?returnUrl=@Uri.EscapeDataString(returnUrl)">
+                                    <i class="bi @(isMe ? "bi-check-lg" : "bi-person")" aria-hidden="true"></i> @user.Name
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </header>
+
+            <main role="main" class="bz-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    @* Dialogs live outside .bz-main, so they don't end up behind Bootstrap's backdrop *@
+    @await RenderSectionAsync("Modals", required: false)
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

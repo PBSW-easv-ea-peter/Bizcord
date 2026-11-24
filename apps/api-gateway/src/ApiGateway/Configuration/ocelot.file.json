@@ -19,6 +19,7 @@
       "DownstreamPathTemplate": "/files/{fileId}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "fileservice", "Port": 8083 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
@@ -30,6 +31,7 @@
       "DownstreamPathTemplate": "/quota",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "fileservice", "Port": 8083 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }

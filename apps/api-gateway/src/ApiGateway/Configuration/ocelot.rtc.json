@@ -7,6 +7,7 @@
             "DownstreamPathTemplate": "/api/messages",
             "DownstreamScheme": "http",
             "DownstreamHostAndPorts": [{ "Host": "realtimecommunicationserver", "Port": 8082 }],
+            "DelegatingHandlers": ["DownstreamQoSHandler"],
             "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
             "RouteClaimsRequirement": { "role": "member" },
             "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }

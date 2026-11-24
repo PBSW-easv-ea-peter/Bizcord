@@ -5,7 +5,7 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
 
         bizcord = softwareSystem "Bizcord" "Chat platform with channels, messaging and engagement features." {
 
-            client = container "Bizcord Client" "Client application used by end users." "" "Client App"
+            client = container "Bizcord Web" "Web frontend: chat list, chats, messages. Calls only the API gateway, with a JWT per user from the gateway's dev faucet (until UserAuth exists)." "ASP.NET Core Razor Pages" "Client App"
 
             group "UserAuth" {
                 userAuthService = container "UserAuth Service" "Handles login by verifying login-information, resetting passwords and disabling users." "" "Service"

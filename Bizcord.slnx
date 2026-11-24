@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/apps/api-gateway/tests/">
+    <Project Path="apps/api-gateway/tests/ApiGateway.Tests/ApiGateway.Tests.csproj" />
+  </Folder>
   <Folder Name="/apps/chat-microservice/" />
   <Folder Name="/apps/chat-microservice/src/">
     <Project Path="apps/chat-microservice/src/ChatService/ChatService.csproj" />
@@ -24,6 +27,13 @@
   <Folder Name="/apps/api-gateway/" />
   <Folder Name="/apps/api-gateway/src/">
     <Project Path="apps/api-gateway/src/ApiGateway/api-gateway.csproj" />
+  </Folder>
+  <Folder Name="/apps/web/" />
+  <Folder Name="/apps/web/src/">
+    <Project Path="apps/web/src/Bizcord/Bizcord.csproj" />
+  </Folder>
+  <Folder Name="/apps/web/tests/">
+    <Project Path="apps/web/tests/Bizcord.Web.Tests/Bizcord.Web.Tests.csproj" />
   </Folder>
   <Folder Name="/libs/">
     <Project Path="libs/Bizcord.Logging.Tests/Bizcord.Logging.Tests.csproj" />
