@@ -26,6 +26,43 @@
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
     },
     {
+      "Key": "file-messages",
+      "UpstreamPathTemplate": "/chats/{chatId}/file-messages",
+      "UpstreamHttpMethod": ["POST"],
+      "DownstreamPathTemplate": "/chats/{chatId}/file-messages",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
+      "DownstreamHeaderTransform": { "Location": "{DownstreamBaseUrl}, {BaseUrl}" },
+      "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+      "RouteClaimsRequirement": { "role": "member" },
+      "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
+    },
+    {
+      "Key": "file-message-saga",
+      "UpstreamPathTemplate": "/chats/{chatId}/file-messages/{sagaId}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/chats/{chatId}/file-messages/{sagaId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
+      "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+      "RouteClaimsRequirement": { "role": "member" },
+      "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
+    },
+    {
+      "Key": "graphql",
+      "UpstreamPathTemplate": "/graphql",
+      "UpstreamHttpMethod": ["POST"],
+      "DownstreamPathTemplate": "/graphql",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
+      "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+      "RouteClaimsRequirement": { "role": "member" },
+      "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
+    },
+    {
       "Key": "chat-participants",
       "UpstreamPathTemplate": "/chats/{chatId}/participants",
       "UpstreamHttpMethod": ["POST"],

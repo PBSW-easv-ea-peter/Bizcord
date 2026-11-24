@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using ChatService.Contracts;
 using ChatService.Tests.Persistence;
+using ChatService.Tests.Api;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Testcontainers.RabbitMq;
@@ -43,6 +44,7 @@ public class PublishTimeoutTests
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseSetting("ConnectionStrings:ChatDb", TestDatabase.ConnectionString);
+            builder.UseSetting("Jwt:SigningKey", TestTokens.SigningKey);
             builder.UseSetting("ConnectionStrings:RabbitMq", rabbitMqConnectionString);
             builder.UseSetting("RabbitMq:PublishTimeout", PublishTimeout.ToString());
         }
@@ -50,7 +52,7 @@ public class PublishTimeoutTests
     private static HttpClient ClientFor(Factory factory, Guid userId)
     {
         var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-User-Id", userId.ToString());
+        client.AsMember(userId);
         return client;
     }
 

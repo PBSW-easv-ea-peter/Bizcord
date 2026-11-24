@@ -21,7 +21,7 @@ The shared model is **this document**, i.e. the JSON shapes and event names belo
 | Errors | ProblemDetails (RFC 9457), `application/problem+json` |
 
 ## REST API
-All calls require the `X-User-Id` header (the user performing the action). It will be replaced by a UserAuth token later.
+All calls require `Authorization: Bearer <token>` – the JWT the gateway issues (HS256, issuer `http://api-gateway`, audience `internal-api`). ChatService validates it itself (East/West security): no or invalid token → 401. REST and GraphQL require `role: member`, `/health` requires `role: internal-service`, otherwise 403. The caller is the token's `sub`; an `X-User-Id` header sent by the client is overwritten. The service is only reachable through the gateway on the Docker network.
 
 | Method and path | Body | Response |
 |---|---|---|
@@ -119,8 +119,8 @@ New fields are added without notice and are non-breaking. A breaking change (rem
 ## What ChatService needs from others
 | From | What | Status |
 |---|---|---|
-| UserService | Valid `userId`s. Today we trust `X-User-Id` and the ids we receive | Assumed |
+| UserService | Valid `userId`s. Today we trust the `sub` of a valid token and the ids we receive | Assumed |
 | UserService | Event when a user is deleted/deactivated (e.g. `user.deleted`), so participations can be ended | Wanted |
 | RTC | `rtc.message-delivered` (`messageId`, `deliveredToUserIds`, `deliveredAt`) → sets `deliveredAt` on receipts. Subscription `chat-service`. See [RTC's contract](../../real-time-communication-microservice/docs/contracts.md). If the database is unavailable, the event ends up in EasyNetQ's error queue and is not retried | Delivered – tested in `MessageDeliveredConsumerContractTests` |
 | FileService | The saga messages `file.reserve-quota`/`file.release-quota` (we send) and `file.quota-reserved`/`-rejected`/`-released` (we consume, subscription `chat-service`). See [FileService's contract](../../file-microservice/docs/contracts.md) | Delivered – tested in `FileSagaContractTests` |
-| UserAuth | Token instead of `X-User-Id` | Later |
+| UserAuth | Issues the tokens (today the gateway's faucet). Later RS256 + JWKS, so services do not hold the signing key | Later |

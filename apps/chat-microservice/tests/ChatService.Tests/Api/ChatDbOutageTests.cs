@@ -44,7 +44,7 @@ public sealed class ChatDbOutageTests : IAsyncLifetime
         // Without a short DB timeout the first call would hang for 30 s - fail the test instead.
         client.Timeout = TimeSpan.FromSeconds(15);
         var userId = Guid.NewGuid();
-        client.DefaultRequestHeaders.Add("X-User-Id", userId.ToString());
+        client.AsMember(userId);
         var chatId = Guid.NewGuid();
         var url = $"/chats/{chatId}";
 

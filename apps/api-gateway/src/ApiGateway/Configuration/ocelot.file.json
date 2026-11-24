@@ -1,0 +1,40 @@
+{
+  "Routes": [
+    {
+      "Key": "files-upload",
+      "UpstreamPathTemplate": "/files",
+      "UpstreamHttpMethod": ["POST"],
+      "DownstreamPathTemplate": "/files",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "fileservice", "Port": 8083 }],
+      "DownstreamHeaderTransform": { "Location": "{DownstreamBaseUrl}, {BaseUrl}" },
+      "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+      "RouteClaimsRequirement": { "role": "member" },
+      "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
+    },
+    {
+      "Key": "file",
+      "UpstreamPathTemplate": "/files/{fileId}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/files/{fileId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "fileservice", "Port": 8083 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
+      "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+      "RouteClaimsRequirement": { "role": "member" },
+      "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
+    },
+    {
+      "Key": "quota",
+      "UpstreamPathTemplate": "/quota",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/quota",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "fileservice", "Port": 8083 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
+      "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+      "RouteClaimsRequirement": { "role": "member" },
+      "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
+    }
+  ]
+}

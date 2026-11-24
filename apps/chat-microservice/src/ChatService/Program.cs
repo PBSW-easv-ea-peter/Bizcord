@@ -43,6 +43,11 @@ builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 // Health
 builder.Services.AddHealthChecks();
 
+// Authentication: the same JWT as the gateway. Tests set Jwt:SigningKey directly instead of using Vault.
+var signingKey = builder.Configuration["Jwt:SigningKey"]
+                 ?? await VaultSecretProvider.GetJwtSigningKeyAsync(builder.Configuration);
+builder.Services.AddChatAuthentication(builder.Configuration, signingKey);
+
 // GraphQL: BFF-style presentation layer next to REST, on top of the same application services
 builder.Services
     .AddGraphQLServer()
@@ -65,9 +70,13 @@ app.MapOpenApi();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.MapHealthChecks("/health");
-app.MapControllers();
-app.MapGraphQL();
+app.UseAuthentication();
+app.UseUserFromToken();
+app.UseAuthorization();
+
+app.MapHealthChecks("/health").RequireAuthorization(JwtAuthentication.InternalServicePolicy);
+app.MapControllers().RequireAuthorization(JwtAuthentication.MemberPolicy);
+app.MapGraphQL().RequireAuthorization(JwtAuthentication.MemberPolicy);
 
 app.Run();
 

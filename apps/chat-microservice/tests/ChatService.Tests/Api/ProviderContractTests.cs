@@ -14,7 +14,7 @@ public class ProviderContractTests(ChatApiFactory factory) : IClassFixture<ChatA
     private HttpClient ClientFor(Guid userId)
     {
         var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-User-Id", userId.ToString());
+        client.AsMember(userId);
         return client;
     }
 

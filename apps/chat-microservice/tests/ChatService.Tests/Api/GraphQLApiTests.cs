@@ -18,7 +18,7 @@ public class GraphQLApiTests(ChatApiFactory factory) : IClassFixture<ChatApiFact
     {
         var client = factory.CreateClient();
         if (userId is not null)
-            client.DefaultRequestHeaders.Add("X-User-Id", userId.ToString());
+            client.AsMember(userId.Value);
         return client;
     }
 
@@ -94,11 +94,14 @@ public class GraphQLApiTests(ChatApiFactory factory) : IClassFixture<ChatApiFact
     }
 
     [Fact]
-    public async Task MissingHeader_ReturnsUnauthenticated()
+    public async Task SubIsNotAUserId_ReturnsUnauthenticated()
     {
         var chatId = await CreateGroupAsAlice();
+        // A valid member token whose sub is not a Guid: the interceptor finds no user id.
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new("Bearer", TestTokens.Create("not-a-user-id"));
 
-        var result = await PostGraphQL(ClientFor(null), MessagesQuery, new { chatId });
+        var result = await PostGraphQL(client, MessagesQuery, new { chatId });
 
         Assert.Equal("UNAUTHENTICATED", ErrorCode(result));
         Assert.Equal(JsonValueKind.Null, result.GetProperty("data").ValueKind);
