@@ -7,6 +7,7 @@
       "DownstreamPathTemplate": "/chats/{type}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
       "DownstreamHeaderTransform": { "Location": "{DownstreamBaseUrl}, {BaseUrl}" },
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "member" },
@@ -19,6 +20,7 @@
       "DownstreamPathTemplate": "/chats/{chatId}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
@@ -30,6 +32,7 @@
       "DownstreamPathTemplate": "/chats/{chatId}/participants",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
@@ -41,6 +44,7 @@
       "DownstreamPathTemplate": "/chats/{chatId}/messages",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
@@ -52,6 +56,7 @@
       "DownstreamPathTemplate": "/chats/{chatId}/messages/{messageId}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
@@ -63,6 +68,7 @@
       "DownstreamPathTemplate": "/chats/{chatId}/messages/{messageId}/seen",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
@@ -74,6 +80,7 @@
       "DownstreamPathTemplate": "/chats/{chatId}/messages/{messageId}/receipts",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
@@ -85,6 +92,7 @@
       "DownstreamPathTemplate": "/health",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
+      "DelegatingHandlers": ["DownstreamQoSHandler"],
       "AuthenticationOptions": {
         "AuthenticationProviderKeys": ["Bearer"]
       },

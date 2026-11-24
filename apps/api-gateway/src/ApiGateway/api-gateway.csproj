@@ -12,6 +12,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
         <PackageReference Include="Ocelot" Version="25.0.2" />
+        <PackageReference Include="Polly.Core" Version="8.9.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.3.0" />
     </ItemGroup>
 

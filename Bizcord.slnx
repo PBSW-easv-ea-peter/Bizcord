@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/apps/api-gateway/tests/">
+    <Project Path="apps/api-gateway/tests/ApiGateway.Tests/ApiGateway.Tests.csproj" />
+  </Folder>
   <Folder Name="/apps/chat-microservice/" />
   <Folder Name="/apps/chat-microservice/src/">
     <Project Path="apps/chat-microservice/src/ChatService/ChatService.csproj" />
