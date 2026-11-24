@@ -176,18 +176,18 @@ docker compose unpause chatservice   # after 5 s the next call goes through agai
 
 ### Running the smoke test
 
-[`gateway-smoke-test.sh`](gateway-smoke-test.sh) checks routing, authentication and authorization against a running stack and prints `PASS`/`FAIL` per check.
+[`gateway-smoke-test.sh`](gateway-smoke-test.sh) checks routing, authentication and authorization, and East/West security (week 45), against a running stack and prints `PASS`/`FAIL` per check.
 
 1. Start the stack from the repo root, with Vault set up as described in the [README](../../README.md#kør-projektet): `docker compose up -d --build`.
 2. From the repo root: `bash docs/documentation/gateway-smoke-test.sh` (Git Bash on Windows).
 
-The script fetches its own `member`, `guest` and `internal-service` tokens from the faucet and creates its own chat and message, so it does not depend on existing data. It calls ChatService directly on `:8081` as well, to compare bodies and to prove which user id the service saw. It exits with the number of failed checks. Override the defaults with `GATEWAY`, `SERVICE` or `USER_ID` if your ports or test user differ.
+The script fetches its own `member`, `guest` and `internal-service` tokens from the faucet and creates its own chat and message, so it does not depend on existing data. ChatService is not published on the host any more (#21), so the script calls it directly from inside the compose network with a throwaway `curlimages/curl` container. It finds the network from the running gateway container, so run it from the repo root. Direct calls use a token too, because ChatService validates the JWT itself. It exits with the number of failed checks. Override the defaults with `GATEWAY`, `USER_ID`, `NETWORK` or `CHATSERVICE` if your setup differs.
 
 ### Expected results
 
-The last full run was on 2026-10-21, against the earlier layout (the gateway in a separate clone, `/info` and `{everything}` routes); every check passed then. The script has since been updated to the current routes and roles, but **has not been re-run yet**. The tables show what it checks.
+RUN_RESULT_PLACEHOLDER
 
-Routing (task 01) – each endpoint called through `:8080` and, where it matters, directly on `:8081`:
+Routing (task 01) – each endpoint called through `:8080` and, where it matters, directly on ChatService inside Docker:
 
 | Check | Expected |
 |---|---|
@@ -213,7 +213,16 @@ Authentication and authorization (task 02):
 | `GET /chat/health` | 401 | – | – | 200 | 403 |
 | `GET /chats/{chatId}` with `member` + forged `X-User-Id` | | | | | 200 as the token's user |
 
-Lessons from testing: always call the service directly first to know which layer fails (a 500 on messages once turned out to be an outdated local database schema, not the gateway), and check `docker compose logs api-gateway` when the gateway returns nothing – it exits on a configuration error or when Vault is sealed.
+East/West security (week 45):
+
+| Check | Expected |
+|---|---|
+| `localhost:8081`, `:8082`, `:8083` from the host | Not reachable |
+| ChatService directly (inside Docker), `GET /chats/{chatId}` | No token 401, invalid 401, `guest` 403, `member` 200 |
+| ChatService directly, `GET /health` | `member` 403, `internal-service` 200 |
+| ChatService directly, `member` + forged `X-User-Id` | 200 as the token's user |
+
+Lessons from testing: always call the service directly first (inside Docker, see the script's `inside` helper) to know which layer fails (a 500 on messages once turned out to be an outdated local database schema, not the gateway), and check `docker compose logs api-gateway` when the gateway returns nothing – it exits on a configuration error or when Vault is sealed.
 
 ## Backlog
 
