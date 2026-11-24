@@ -93,10 +93,10 @@ replaces the downstream base URL with the gateway's (`BaseUrl` in `ocelot.global
 
 **Decision:** RTC is routed through the gateway as well (`ocelot.rtc.json`), so the browser has a single entry point.
 
-- `/rtc/hubs/chat/{everything}` carries the SignalR hub. The gateway adds `?userId=` from the token's `sub` (`AddQueriesToRequest`), so the client no longer chooses who it is listening as.
+- `/rtc/hubs/chat/{everything}` carries the SignalR hub. It is protected by `RtcHubGuard` (`Application/Security/`), a middleware that runs before Ocelot: no valid token → 401, no `role: member` → 403, and `?userId=` is replaced with the token's `sub`, so the client cannot choose who it is listening as. Browser clients send the token as `?access_token=` (WebSockets cannot carry headers); the gateway reads it for this path only and does not forward it.
 - `/rtc/messages` routes RTC's `POST /api/messages`.
 
-**Not verified:** whether WebSocket upgrades pass through these routes. Ocelot proxies WebSockets only for `ws`/`wss` downstream schemes, and the route uses `http`, so SignalR may fall back to long polling. The hub route is deliberately left out of the QoS timeout for that reason.
+**Why a middleware and not the route config:** Ocelot's WebSocket proxy skips the route's `AuthenticationOptions`, `RouteClaimsRequirement` and `AddQueriesToRequest`. Tested on 24 Nov 2026: before the guard, a WebSocket with no token and `?userId=B` connected to RTC as B. They still apply to the HTTP negotiate call. WebSocket upgrades do pass through the route despite the `http` downstream scheme (101). The hub route is left out of the QoS timeout, as a long-lived connection would otherwise be cut.
 
 **Open question for #21:** RTC's `POST /api/messages` is a manual test endpoint (see the C4 model), but the gateway exposes it to every `member`. Either require `internal-service` or remove the route.
 

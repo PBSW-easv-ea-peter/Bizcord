@@ -7,7 +7,7 @@ The conventions are the same as ChatService's (camelCase JSON, UUID strings, ISO
 | Topic | Rule |
 |---|---|
 | Endpoint | `/hubs/chat?userId={uuid}` |
-| Identity | `userId` in the query string (MVP – we trust it, just like ChatService's `X-User-Id`). To be replaced by a token later. Without a valid `userId` the connection is rejected. |
+| Identity | `userId` in the query string. RTC trusts it; without a valid `userId` the connection is rejected. Clients from outside connect through the gateway (`/rtc/hubs/chat`) with a `member` JWT (`Authorization: Bearer` or `?access_token=`), and the gateway overwrites `userId` with the token's `sub`. |
 | Direction | Server → client only. Messages are sent via ChatService's REST API, not via the hub. |
 | Multiple devices | A user can have several connections; all of them receive the push. |
 

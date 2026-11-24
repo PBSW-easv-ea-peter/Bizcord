@@ -1,4 +1,5 @@
 using System.Text;
+using Bizcord.ApiGateway.Application.Security;
 using Bizcord.ApiGateway.Application.Services;
 using Bizcord.ApiGateway.Resilience;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -33,6 +34,17 @@ public static class ServiceExtensions
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
                 options.MapInboundClaims = false;
+
+                options.Events = new JwtBearerEvents
+                {
+                    // Browsers cannot set headers on a WebSocket, so SignalR clients send the token as ?access_token=.
+                    OnMessageReceived = context =>
+                    {
+                        if (context.Request.Path.StartsWithSegments(RtcHubGuard.Path) && string.IsNullOrEmpty(context.Token))
+                            context.Token = context.Request.Query["access_token"];
+                        return Task.CompletedTask;
+                    }
+                };
 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {

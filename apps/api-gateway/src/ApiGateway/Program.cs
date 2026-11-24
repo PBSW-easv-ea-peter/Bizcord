@@ -1,4 +1,5 @@
 using System.Text;
+using Bizcord.ApiGateway.Application.Security;
 using Bizcord.ApiGateway.Application.Services;
 using Bizcord.ApiGateway.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -93,6 +94,8 @@ app.Use(async (context, next) =>
     context.Request.Headers.Remove("X-User-Id");
     await next(context);
 });
+
+app.UseMiddleware<RtcHubGuard>();
 
 await app.UseOcelot();
 await app.RunAsync();
