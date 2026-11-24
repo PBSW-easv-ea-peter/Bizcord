@@ -29,10 +29,8 @@ public class JwtTokenService
         var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.AuthenticationProviderKey));
         var signingCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
-        List<Claim> claims =
-        [
-            new("role", "internal-service")
-        ];
+        // Only the requested claims: a default role would give every token that role's routes.
+        List<Claim> claims = [];
         foreach (var claim in options.Claims)
         {
             if (claim.Key == "sub")
