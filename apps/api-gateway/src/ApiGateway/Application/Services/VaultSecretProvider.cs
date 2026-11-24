@@ -12,8 +12,11 @@ public class VaultSecretProvider
     public VaultSecretProvider(IConfiguration configuration)
     {
         _vaultAddr = configuration["Vault:Address"] ?? "http://vault:8200";
-        _vaultToken = configuration["Vault:Token"]
-            ?? throw new InvalidOperationException("Vault token is required. Set VAULT_TOKEN environment variable.");
+        // Compose passes an empty string when .env has no VAULT_TOKEN, so null alone is not enough.
+        var token = configuration["Vault:Token"];
+        if (string.IsNullOrWhiteSpace(token))
+            throw new InvalidOperationException("Vault token is required. Set VAULT_TOKEN in .env - see README.");
+        _vaultToken = token;
 
         _httpClient = new HttpClient
         {

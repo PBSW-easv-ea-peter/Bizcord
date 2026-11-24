@@ -19,8 +19,10 @@
       "UpstreamHttpMethod": ["GET"],
       "DownstreamPathTemplate": "/chats/{chatId}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8081 }],
+      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
       "DelegatingHandlers": ["DownstreamQoSHandler"],
+      "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
+      "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
     },
     {
@@ -29,7 +31,7 @@
       "UpstreamHttpMethod": ["POST"],
       "DownstreamPathTemplate": "/chats/{chatId}/participants",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8081 }],
+      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
       "DelegatingHandlers": ["DownstreamQoSHandler"],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
       "RouteClaimsRequirement": { "role": "member" },
@@ -41,10 +43,10 @@
       "UpstreamHttpMethod": ["GET", "POST"],
       "DownstreamPathTemplate": "/chats/{chatId}/messages",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8081 }],
+      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
       "DelegatingHandlers": ["DownstreamQoSHandler"],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
-      "RouteClaimsRequirement": { "role": "internal-service" },
+      "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
     },
     {
@@ -89,7 +91,7 @@
       "UpstreamHttpMethod": ["GET"],
       "DownstreamPathTemplate": "/health",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8081 }],
+      "DownstreamHostAndPorts": [{ "Host": "chatservice", "Port": 8081 }],
       "DelegatingHandlers": ["DownstreamQoSHandler"],
       "AuthenticationOptions": {
         "AuthenticationProviderKeys": ["Bearer"]
@@ -108,7 +110,7 @@
         "AuthenticationProviderKeys": ["Bearer"]
       },
       "RouteClaimsRequirement": {
-        "role": "internal-service"
+        "role": "member"
       },
       "AddHeadersToRequest": {
         "X-User-Id": "Claims[sub] > value"

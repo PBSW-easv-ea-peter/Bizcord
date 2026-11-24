@@ -190,6 +190,20 @@ The status is used instead of the assignment's booleans (`PaymentProcessed`, `Is
 
 **Where the state lives, and why there:** in ChatDB, because ChatService is the orchestrator and the one who has to answer the sender ("how did my file message go?"). The saga state and the message are in the same database, which is what makes step 3 one atomic local transaction.
 
+## Why no saga framework (Rebus)?
+
+The task title says "using Rebus", but the assignment text asks us to build the saga on the `MessageClient` we already have: "There is no saga framework here - you will implement the coordination logic yourself". We followed the text. This is what Rebus would have given us, and where we built it ourselves:
+
+| Rebus feature | Our implementation |
+|---|---|
+| Saga data persisted between messages (saga storage) | `FileMessageSaga` in ChatDB via `DapperFileMessageSagaRepository` |
+| Correlating replies with a saga instance | Every message carries `SagaId` |
+| Concurrency control (optimistic, by revision) | Updates are conditional on the status the saga had when it was loaded (`where status = @ExpectedStatus`), so a reply and the timeout job cannot both win |
+| Timeouts (`bus.Defer`) | `FileSagaTimeoutService` looks for stale sagas and compensates |
+| Retries and an error queue | The timeout job retries `release-quota` (3 attempts in total), then ends the saga as `CompensationFailed` and logs an Error. No error queue: delivery is at-most-once |
+
+Moving to Rebus would mainly replace the repository, the timeout job and the correlation code. The domain (`FileMessageSaga`) and the orchestration decisions would stay the same.
+
 ## The hard question
 
 > *If the message was already delivered to 200 online users before the quota check failed, what does compensation actually look like?*
