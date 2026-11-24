@@ -93,6 +93,12 @@ services:
         condition: service_healthy
       filedb:
         condition: service_healthy
+    labels:
+      logging: "fluentd"
+    logging:
+      driver: json-file
+      options:
+        labels: logging
 
   chatservice:
     build:
