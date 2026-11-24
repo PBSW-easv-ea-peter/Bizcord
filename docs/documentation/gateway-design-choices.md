@@ -185,7 +185,7 @@ The script fetches its own `member`, `guest` and `internal-service` tokens from 
 
 ### Expected results
 
-RUN_RESULT_PLACEHOLDER
+Last full run: 2026-11-24 on a fresh clone with the README steps. All 46 checks passed. Pointing `CHATSERVICE` at a wrong port makes the 9 direct checks fail, so they cannot pass when the service is not reached. The tables show what it checks.
 
 Routing (task 01) – each endpoint called through `:8080` and, where it matters, directly on ChatService inside Docker:
 
