@@ -24,7 +24,7 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
 
             group "Chat" {
                 chatService = container "ChatService" "Handles direct and group chats: participants, messages (send/edit/delete) and read receipts (delivered/seen). Source of truth via REST." "ASP.NET Core Web API (Dapper, EasyNetQ)" "Service" {
-                    chatsController = component "ChatsController" "REST: POST /chats/direct, POST /chats/group, GET /chats/{id}, POST /chats/{id}/participants. Caller identity from the X-User-Id header, set by the gateway from the JWT." "ASP.NET Core Web API Controller"
+                    chatsController = component "ChatsController" "REST: POST /chats/direct, POST /chats/group, GET /chats/{id}, POST /chats/{id}/participants. Caller identity from the validated JWT's sub (validated again in ChatService)." "ASP.NET Core Web API Controller"
                     chatMessagesController = component "MessagesController" "REST under /chats/{id}/messages: send (POST), page (GET), edit (PUT), delete (DELETE), mark seen (POST .../seen), receipts (GET .../receipts)." "ASP.NET Core Web API Controller"
                     chatAppService = component "ChatAppService" "Use cases for chats: create direct/group chat, get chat, add participant. Publishes chat.participant-added after save." "C# application service"
                     messageAppService = component "MessageAppService" "Use cases for messages and receipts. Saves first, then publishes chat.message-sent/-edited/-deleted and chat.messages-seen. Sets delivered_at from rtc.message-delivered." "C# application service"
@@ -77,6 +77,9 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
 
             // Shared infrastructure like RabbitMQ. Runs as one node-level agent today (Kubernetes: DaemonSet);
             // planned to become a per-pod sidecar before Kubernetes (docs/documentation/logging-sidecar.md).
+            // Shared infrastructure: holds the JWT signing key. Each service reads it with its own token (read-only policy).
+            vault = container "Vault" "Secrets store. Holds the JWT signing key; the gateway and ChatService read it at startup, each with its own read-only token." "HashiCorp Vault" "Database"
+
             logAgent = container "Log Agent" "Collects JSON logs from services that opt in with the label logging=fluentd, parses them into fields and forwards them. Output is its own stdout, standing in for a central log system." "Fluentd" "Log Agent"
         }
 
@@ -90,7 +93,11 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
         apiGateway -> userAuthService "Login, returns JWT (planned)"
         apiGateway -> userService "Manages user (planned)"
         apiGateway -> channelService "Routes (planned)"
-        apiGateway -> chatService "Routes /chats/* (X-User-Id from JWT sub)"
+        apiGateway -> chatService "Routes /chats/* and /graphql, forwards the JWT (X-User-Id from JWT sub)"
+        apiGateway -> fileService "Routes /files, /quota (X-User-Id from JWT sub)"
+        apiGateway -> vault "Reads JWT signing key at startup"
+        // East/West: ChatService validates the forwarded JWT itself and is only reachable on the Docker network.
+        chatService -> vault "Reads JWT signing key at startup (own token)"
         apiGateway -> engagementService "Routes (planned)"
 
         userService -> userAuthService "Validate"
@@ -100,7 +107,6 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
         channelService -> channelDb "Read/Write"
         chatService -> chatDb "Read/Write (Dapper)"
         fileService -> fileDb "Read/Write (Dapper)"
-        client -> fileService "Upload/download files (gateway routes not added yet)"
         engagementService -> engagementDb "Read/Write"
 
         // RabbitMQ is used more broadly than notifications - services publish events to the broker,
@@ -115,8 +121,8 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
         rabbitMq -> fileService "Deliver: file.reserve-quota, file.release-quota (saga commands), chat.message-deleted (free quota)"
         fileService -> rabbitMq "Publish: file.quota-reserved/-rejected/-released"
 
-        // RTC bypasses the gateway (long-lived WebSockets), so it must validate the JWT itself.
-        client -> realTimeCommunicationService "Connects (SignalR, /hubs/chat), bypasses gateway"
+        // RTC goes through the gateway too (/rtc/*, WebSocket upgrade proxied); it is not published on the host.
+        apiGateway -> realTimeCommunicationService "Routes /rtc/hubs/chat (SignalR), userId from JWT sub"
         realTimeCommunicationService -> client "Push notification"
 
         // The services only write to stdout and do not know the agent exists - the agent reads Docker's log files.
@@ -139,7 +145,7 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
         messageDeliveredConsumer -> messageAppService "MarkDeliveredAsync"
         chatMessageClient -> chatRabbitMqMessageClient "Implemented by"
         chatRabbitMqMessageClient -> rabbitMq "Publish/Subscribe via EasyNetQ"
-        apiGateway -> fileMessagesController "Send a message with a file, follow the saga (route not added yet)"
+        apiGateway -> fileMessagesController "Send a message with a file, follow the saga"
         fileMessagesController -> fileMessageSagaOrchestrator "Calls"
         fileSagaReplyConsumer -> fileMessageSagaOrchestrator "HandleAsync(quota-reserved/-rejected/-released)"
         fileSagaTimeoutService -> fileMessageSagaOrchestrator "TimeOutStaleAsync"
@@ -156,7 +162,7 @@ workspace "Bizcord" "C4 model - Level 2 (Container diagram) and Level 3 (Compone
         messageHandlerRegistration -> handleMessages "Provides message types (MessageHandlerRegistry)"
         rtcMessageClient -> rtcRabbitMqMessageClient "Implemented by"
         rtcRabbitMqMessageClient -> rabbitMq "Publish/Subscribe messages via EasyNetQ (IBus)"
-        client -> chatHub "Connects, receives MessageReceived"
+        client -> chatHub "Connects via the gateway (/rtc/hubs/chat), receives MessageReceived"
         chatHub -> presenceTracker "Connected/Disconnected"
         messageHandlers -> presenceTracker "Who of the recipients is online?"
         messageHandlers -> clientNotifier "Push MessageReceived"

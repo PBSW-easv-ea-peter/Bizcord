@@ -36,6 +36,8 @@ public sealed class ChatApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("ConnectionStrings:ChatDb", _connectionString);
+        // No Vault in the tests - the service validates tokens signed with this key.
+        builder.UseSetting("Jwt:SigningKey", TestTokens.SigningKey);
         foreach (var (key, value) in _settings)
             builder.UseSetting(key, value);
 

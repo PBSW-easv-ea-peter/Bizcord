@@ -89,6 +89,8 @@ app.Use(async (context, next) =>
 {
     context.Request.Headers.Remove("X-UserId");
     context.Request.Headers.Remove("X-Role");
+    // Only AddHeadersToRequest (from the token's sub) may set it - a route without it must not pass a forged one on.
+    context.Request.Headers.Remove("X-User-Id");
     await next(context);
 });
 

@@ -7,7 +7,7 @@ Analyse, design og arkitekturbeslutninger: [docs/analysis-and-design.md](docs/an
 
 API-gatewayen henter sin JWT-signeringsnøgle fra Vault og skal bruge et Vault-token, som ligger i en lokal `.env`-fil. `.env` er git-ignoreret. Skabelonen `.env.example` er versioneret.
 
-Uden `.env` starter resten af stakken, men gatewayen stopper med `Vault token is required`.
+ChatService validerer også selv tokenet og henter nøglen fra Vault med sit eget token. Uden `.env` starter resten af stakken, men gatewayen og ChatService stopper med `Vault token is required`.
 
 ### Første gang: Vault og `.env`
 
@@ -22,7 +22,7 @@ Uden `.env` starter resten af stakken, men gatewayen stopper med `Vault token is
    docker compose exec vault vault operator unseal   # indsæt nøgle 1
    docker compose exec vault vault operator unseal   # indsæt nøgle 2
    ```
-3. Opret secret, policy og gatewayens app-token. Tokenet får det faste id fra `.env.example`, så `.env` ikke skal redigeres:
+3. Opret secret, policy og app-tokens til gatewayen og ChatService. Tokenerne får de faste id'er fra `.env.example`, så `.env` ikke skal redigeres:
    ```bash
    docker compose exec vault sh
    vault login                                    # root-token
@@ -30,6 +30,7 @@ Uden `.env` starter resten af stakken, men gatewayen stopper med `Vault token is
    vault kv put kv/secrets JwtSigningKey="$(head -c 48 /dev/urandom | base64)"
    vault policy write secrets-reader /vault/policies/secrets-reader.hcl
    vault token create -id=bizcord-gateway-dev-token -policy=secrets-reader -no-default-policy -ttl=768h
+   vault token create -id=bizcord-chatservice-dev-token -policy=secrets-reader -no-default-policy -ttl=768h
    exit
    ```
 4. Start hele stakken:
@@ -37,9 +38,9 @@ Uden `.env` starter resten af stakken, men gatewayen stopper med `Vault token is
    docker compose up -d --build
    ```
 
-Vault gemmer sine data i volumen `vault-data`, så trin 2-3 skal kun gøres én gang. Efter en genstart af Vault-containeren er den sealed igen. Kør så de to `unseal`-kommandoer igen, og genstart derefter gatewayen.
+Vault gemmer sine data i volumen `vault-data`, så trin 2-3 skal kun gøres én gang. Efter en genstart af Vault-containeren er den sealed igen. Kør så de to `unseal`-kommandoer igen, og genstart derefter gatewayen og ChatService.
 
-Tokenet udløber efter 32 dage (Vaults standard-maksimum). Opret det så igen med `vault token create`-linjen fra trin 3. Det faste token-id er kun til udvikling: i et rigtigt miljø genererer Vault tokenet, og det leveres som en hemmelighed.
+Tokenerne udløber efter 32 dage (Vaults standard-maksimum). Opret dem så igen med `vault token create`-linjerne fra trin 3. Det faste token-id er kun til udvikling: i et rigtigt miljø genererer Vault tokenet, og det leveres som en hemmelighed.
 
 Policyen (`vault/policies/secrets-reader.hcl`) giver kun læseadgang til `kv/data/secrets`.
 
@@ -51,10 +52,7 @@ docker compose up -d --build
 
 | Komponent | Port |
 |-----------|------|
-| ChatService | 8081 |
-| RTC | 8082 |
-| FileService | 8083 |
-| API Gateway | 8080 |
+| API Gateway (eneste indgang til ChatService, RTC og FileService) | 8080 |
 | Vault UI | 8200 |
 | RabbitMQ UI | 15672 |
 
@@ -79,6 +77,6 @@ Konfiguration: fluentd/fluent.conf. Designvalg: docs/documentation/logging-sidec
 
 GraphQL (ChatService)
 
-ChatService har et GraphQL-lag ved siden af REST, bygget på de samme application services. Åbn http://localhost:8081/graphql i browseren for at få Nitro (GraphQL IDE). Kald kræver headeren `X-User-Id`, ligesom REST.
+ChatService har et GraphQL-lag ved siden af REST, bygget på de samme application services. Kald går gennem gatewayen: `POST http://localhost:8080/graphql` med `Authorization: Bearer <member-token>` fra `POST /faucet`. Brugeren er tokenets `sub`.
 
 Test-guide med header, testdata, queries og variables samt designvalg: [docs/documentation/graphql.md](docs/documentation/graphql.md)

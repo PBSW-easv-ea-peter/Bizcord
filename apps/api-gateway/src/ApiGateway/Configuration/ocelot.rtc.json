@@ -6,7 +6,7 @@
             "UpstreamHttpMethod": ["POST"],
             "DownstreamPathTemplate": "/api/messages",
             "DownstreamScheme": "http",
-            "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8082 }],
+            "DownstreamHostAndPorts": [{ "Host": "realtimecommunicationserver", "Port": 8082 }],
             "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
             "RouteClaimsRequirement": { "role": "member" },
             "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
@@ -17,7 +17,7 @@
             "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
             "DownstreamPathTemplate": "/hubs/chat/{everything}",
             "DownstreamScheme": "http",
-            "DownstreamHostAndPorts": [{ "Host": "host.docker.internal", "Port": 8082 }],
+            "DownstreamHostAndPorts": [{ "Host": "realtimecommunicationserver", "Port": 8082 }],
             "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
             "RouteClaimsRequirement": { "role": "member" },
             "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" },

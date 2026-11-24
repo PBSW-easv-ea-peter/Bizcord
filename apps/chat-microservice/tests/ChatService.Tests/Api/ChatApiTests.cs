@@ -17,7 +17,7 @@ public class ChatApiTests(ChatApiFactory factory) : IClassFixture<ChatApiFactory
     private HttpClient ClientFor(Guid userId)
     {
         var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-User-Id", userId.ToString());
+        client.AsMember(userId);
         return client;
     }
 
@@ -88,11 +88,11 @@ public class ChatApiTests(ChatApiFactory factory) : IClassFixture<ChatApiFactory
     }
 
     [Fact]
-    public async Task MissingUserHeader_Returns400()
+    public async Task MissingToken_Returns401()
     {
         var response = await factory.CreateClient().PostAsJsonAsync("/chats/group", new CreateGroupChatRequest("Team"));
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]

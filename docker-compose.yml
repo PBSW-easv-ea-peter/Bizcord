@@ -59,6 +59,8 @@ services:
       Vault__Address: http://vault:8200
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
+      # Must match the issuer ChatService validates (its appsettings.json) - Development would otherwise use localhost:8080.
+      Jwt__Issuer: http://api-gateway
     depends_on:
       - vault
     ports:
@@ -85,8 +87,9 @@ services:
     build:
       context: .
       dockerfile: apps/file-microservice/Dockerfile
-    ports:
-      - "8083:8083"
+    # East/West: not published on the host - only services on the Docker network (the gateway) can reach it.
+    expose:
+      - "8083"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8083
@@ -108,18 +111,24 @@ services:
     build:
       context: .
       dockerfile: apps/chat-microservice/Dockerfile
-    ports:
-      - "8081:8081"
+    # East/West: not published on the host - only services on the Docker network (the gateway) can reach it.
+    expose:
+      - "8081"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8081
       RabbitMq__Host: rabbitmq
       ConnectionStrings__ChatDb: "Host=postgres;Port=5432;Database=chatDB;Username=admin;Password=admin"
+      # Own Vault token (same read-only policy as the gateway), so it can be revoked on its own.
+      Vault__Token: ${CHATSERVICE_VAULT_TOKEN:-}
+      Vault__Address: http://vault:8200
     depends_on:
       rabbitmq:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      vault:
+        condition: service_started
     labels:
       logging: "fluentd"
     logging:
@@ -131,8 +140,9 @@ services:
     build:
       context: .
       dockerfile: apps/real-time-communication-microservice/Dockerfile
-    ports:
-      - "8082:8082"
+    # East/West: not published on the host - only services on the Docker network (the gateway) can reach it.
+    expose:
+      - "8082"
     environment:
       ASPNETCORE_URLS: http://+:8082
       ASPNETCORE_ENVIRONMENT: Production

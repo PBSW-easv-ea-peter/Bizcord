@@ -1,8 +1,8 @@
 namespace ChatService.Controllers;
 
 /// <summary>
-/// Who performs the action. Users are owned by UserService - we trust the header in the MVP.
-/// Will be replaced by a UserAuth token later; then this is the only place that needs to change.
+/// Who performs the action. The header is set from the validated token's sub by JwtAuthentication.UseUserFromToken,
+/// so a header sent by the client is never trusted.
 /// </summary>
 internal static class UserHeader
 {
