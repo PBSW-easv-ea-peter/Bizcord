@@ -14,13 +14,13 @@ The token is validated twice:
 
 | Role | Allowed |
 |---|---|
-| `member` | Chat REST endpoints, `/graphql`, files, quota and the SignalR hub |
+| `member` | Chat REST endpoints, `/graphql`, files, quota and SignalR negotiate (not the WebSocket itself – see "Not covered") |
 | `internal-service` | `/chat/health` (service-to-service) |
 
 - Gateway: `RouteClaimsRequirement` per route in [`Configuration/ocelot.*.json`](../../apps/api-gateway/src/ApiGateway/Configuration/).
 - ChatService: policies `member` / `internal-service` (`RequireClaim("role", ...)`) on controllers, GraphQL and health checks.
 
-**The caller is the token's `sub`, never a header.** The gateway strips incoming `X-User-Id` and sets it from `Claims[sub]` (for RTC also the `userId` query parameter). ChatService overwrites `X-User-Id` again from its own validated token (`JwtAuthentication.UseUserFromToken`), so a forged header is ignored even if the gateway is bypassed.
+**The caller is the token's `sub`, never a header.** The gateway strips incoming `X-User-Id` and sets it from `Claims[sub]`. ChatService overwrites `X-User-Id` again from its own validated token (`JwtAuthentication.UseUserFromToken`), so a forged header is ignored even if the gateway is bypassed.
 
 ## 3. Implementation
 | Where | What | File |
@@ -59,6 +59,16 @@ The token is validated twice:
 | SignalR negotiate none / member, WebSocket upgrade | 401 / 200 / 101 |
 
 ## Not covered
+- **The RTC WebSocket is not protected through the gateway.** Ocelot applies neither the `Bearer` check, the role requirement nor `AddQueriesToRequest` to the WebSocket connection, so RTC takes the user from the client's own `?userId=`. Tested on 24 Nov 2026 via `ws://localhost:8080/rtc/hubs/chat` with the SignalR handshake, reading the `UserId` RTC logs on connect:
+
+  | Token | Query | RTC connected as |
+  |---|---|---|
+  | Valid, user A | none | Rejected (no `userId`) |
+  | Valid, user A | `?userId=B` | B |
+  | None | `?userId=B` | B |
+  | Invalid | `?userId=B` | B |
+
+  Anyone who can reach `:8080` can connect as any user and receive their pushes. The HTTP negotiate call is protected (401 without a token); the WebSocket upgrade is not.
 - FileService and RTC do not validate the JWT themselves; they trust the gateway and rely on network isolation only.
 - RabbitMQ traffic between services is not token-protected.
 - A message push over the WebSocket was not tested end to end.
