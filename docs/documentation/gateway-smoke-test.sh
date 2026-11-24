@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Smoke test for the ChatService routes in the API gateway (week 43, tasks 01 and 02).
-# Needs: the gateway and ChatService running. Creates its own chat and message, so no local data is assumed.
+# Smoke test for the ChatService routes in the API gateway (week 43, tasks 01 and 02; roles as of #33).
+# Needs: the root docker compose stack running, with Vault set up (README). Creates its own chat and message, so no local data is assumed.
 # Usage: bash docs/documentation/gateway-smoke-test.sh
 
 GATEWAY="${GATEWAY:-http://localhost:8080}"
@@ -37,6 +37,7 @@ token() { # role
 
 MEMBER="Authorization: Bearer $(token member)"
 GUEST="Authorization: Bearer $(token guest)"
+INTERNAL="Authorization: Bearer $(token internal-service)"
 INVALID="Authorization: Bearer abc.def.ghi"
 JSON="Content-Type: application/json"
 
@@ -52,8 +53,8 @@ check "POST /chats/{chatId}/messages (member)" 201 "$STATUS"
 MESSAGE=$(echo "$BODY" | json_id)
 
 echo "== Task 01: routing"
-call -H "$MEMBER" "$GATEWAY/chats/$CHAT/info"
-check "GET /chats/{chatId}/info" 200 "$STATUS"
+call -H "$MEMBER" "$GATEWAY/chats/$CHAT"
+check "GET /chats/{chatId}" 200 "$STATUS"
 GATEWAY_BODY="$BODY"
 call -H "X-User-Id: $USER_ID" "$SERVICE/chats/$CHAT"
 [ "$BODY" = "$GATEWAY_BODY" ] && SAME=identical || SAME="different: $BODY"
@@ -63,14 +64,14 @@ call -H "$MEMBER" "$GATEWAY/chats/$CHAT/messages?limit=1"
 check "GET /chats/{chatId}/messages?limit=1" 200 "$STATUS"
 
 call -X PUT -H "$MEMBER" -H "$JSON" -d '{"content":"smoke edited"}' "$GATEWAY/chats/$CHAT/messages/$MESSAGE"
-check "PUT .../messages/{messageId} ({everything})" 200 "$STATUS"
+check "PUT .../messages/{messageId}" 200 "$STATUS"
 call -X POST -H "$MEMBER" "$GATEWAY/chats/$CHAT/messages/$MESSAGE/seen"
-check "POST .../messages/{messageId}/seen ({everything})" 204 "$STATUS"
+check "POST .../messages/{messageId}/seen" 204 "$STATUS"
 call -H "$MEMBER" "$GATEWAY/chats/$CHAT/messages/$MESSAGE/receipts"
-check "GET .../messages/{messageId}/receipts ({everything})" 200 "$STATUS"
+check "GET .../messages/{messageId}/receipts" 200 "$STATUS"
 
-call -H "$MEMBER" "$GATEWAY/chats/$CHAT"
-check "GET /chats/{chatId} (aggregate)" 200 "$STATUS"
+call -H "$MEMBER" "$GATEWAY/chats/$CHAT/overview"
+check "GET /chats/{chatId}/overview (aggregate)" 200 "$STATUS"
 case "$BODY" in
     '{"chat":{'*'"messages":['*) SHAPE=ok ;;
     *) SHAPE="$BODY" ;;
@@ -81,20 +82,27 @@ call -X POST -H "$MEMBER" -H "$JSON" -d '{}' "$GATEWAY/chats/hest"
 check "POST /chats/hest is rejected by the service" 405 "$STATUS"
 
 echo "== Task 02: authentication and authorization"
-for route in "GET /chats/$CHAT/info" "GET /chats/$CHAT/messages" "GET /chats/$CHAT" "PUT /chats/$CHAT/messages/$MESSAGE"; do
+for route in "GET /chats/$CHAT" "GET /chats/$CHAT/messages" "GET /chats/$CHAT/overview" "PUT /chats/$CHAT/messages/$MESSAGE"; do
     method=${route%% *}; path=${route#* }; url="$GATEWAY$path"
     label=$(echo "$method $path" | sed -e "s/$MESSAGE/{messageId}/" -e "s/$CHAT/{chatId}/")
     call -X "$method" -H "$JSON" -d '{"content":"x"}' "$url";                    check "$label, no token" 401 "$STATUS"
     call -X "$method" -H "$INVALID" -H "$JSON" -d '{"content":"x"}' "$url";      check "$label, invalid token" 401 "$STATUS"
     call -X "$method" -H "$GUEST" -H "$JSON" -d '{"content":"x"}' "$url";        check "$label, role guest" 403 "$STATUS"
+    # A service token is not a user: user routes need member (#19, #20).
+    call -X "$method" -H "$INTERNAL" -H "$JSON" -d '{"content":"x"}' "$url";     check "$label, role internal-service" 403 "$STATUS"
 done
 call -X POST -H "$GUEST" -H "$JSON" -d '{"title":"x"}' "$GATEWAY/chats/group"
 check "POST /chats/group, role guest" 403 "$STATUS"
 
+# The internal route is the other way round.
+call "$GATEWAY/chat/health";                    check "GET /chat/health, no token" 401 "$STATUS"
+call -H "$MEMBER" "$GATEWAY/chat/health";       check "GET /chat/health, role member" 403 "$STATUS"
+call -H "$INTERNAL" "$GATEWAY/chat/health";     check "GET /chat/health, role internal-service" 200 "$STATUS"
+
 # The other user is not a participant, so the service answers 403 if it sees their id.
 call -H "X-User-Id: $OTHER_USER_ID" "$SERVICE/chats/$CHAT"
 check "Precondition: other user gets 403 directly" 403 "$STATUS"
-call -H "$MEMBER" -H "X-User-Id: $OTHER_USER_ID" "$GATEWAY/chats/$CHAT/info"
+call -H "$MEMBER" -H "X-User-Id: $OTHER_USER_ID" "$GATEWAY/chats/$CHAT"
 check "Forged X-User-Id is overwritten by the token" 200 "$STATUS"
 
 echo

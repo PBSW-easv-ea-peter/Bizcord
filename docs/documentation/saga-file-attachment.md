@@ -223,7 +223,7 @@ The alternative, an **optimistic** design, would show the message at once with a
 - **Downloads have no access check**: anyone with the (unguessable) file id can download. FileService doesn't know who is in which chat.
 - **RTC pushes only the text** of `chat.message-sent`. Clients fetch the attachment via ChatService's REST API.
 - The **file bytes live in Postgres** (`bytea`), so deleting the file and the quota change are one transaction. Real large files belong in blob storage.
-- The gateway (in the teacher's repo) has no routes for FileService or `/file-messages` yet.
+- The API gateway has no routes for FileService or `/file-messages` yet (#27), so the saga is started directly on ChatService.
 - The user's tier (Standard/Premium) would come from UserService. Today it is seed data in FileDB.
 
 ## Try it
