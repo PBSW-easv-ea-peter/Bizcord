@@ -20,6 +20,15 @@ All automated tests:
 dotnet test Bizcord.slnx
 ```
 
+Only Docker needs to run. Testcontainers starts Postgres and RabbitMQ.
+
+### Last verified
+
+| Date | Commit | Check | Result |
+|---|---|---|---|
+| 2026-11-24 | `5a61994` | `dotnet test Bizcord.slnx`, integration tests included | 216/216 passed |
+| 2026-11-24 | `5a61994` (PR #42) | Fresh clone, README steps, `docker compose up -d --build`, [`gateway-smoke-test.sh`](documentation/gateway-smoke-test.sh) and the saga [Try it](documentation/saga-file-attachment.md#try-it) | 46/46 checks passed; saga ends `Completed` (happy path) and `Failed` (quota) |
+
 ## Tasks
 
 | Week | Task | Design choices | Code | Verify |
@@ -51,3 +60,5 @@ Each design document has its own section. The most important across the tasks:
 - RabbitMQ traffic between services is not token-protected (week 45).
 - Database passwords are in plain text in `docker-compose.yml`. Only the JWT signing key is in Vault (week 45).
 - Alerts on the log lines that the reliability measures write are assumed, not configured (week 44).
+- The Fluentd sidecar collects logs from ChatService, FileService and RTC only. The API gateway has no `logging: "fluentd"` label, so its logs are only in `docker compose logs api-gateway` (week 47).
+- ChatService and FileService log `Cannot load library libgssapi_krb5.so.2` at startup. Npgsql probes for Kerberos, which we do not use. The message is harmless.
