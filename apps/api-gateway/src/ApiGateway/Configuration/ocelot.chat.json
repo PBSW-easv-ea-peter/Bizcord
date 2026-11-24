@@ -40,7 +40,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8081 }],
       "AuthenticationOptions": { "AuthenticationProviderKeys": ["Bearer"], "AllowedScopes": [] },
-      "RouteClaimsRequirement": { "role": "internal-service" },
+      "RouteClaimsRequirement": { "role": "member" },
       "AddHeadersToRequest": { "X-User-Id": "Claims[sub] > value" }
     },
     {
@@ -100,7 +100,7 @@
         "AuthenticationProviderKeys": ["Bearer"]
       },
       "RouteClaimsRequirement": {
-        "role": "internal-service"
+        "role": "member"
       },
       "AddHeadersToRequest": {
         "X-User-Id": "Claims[sub] > value"
