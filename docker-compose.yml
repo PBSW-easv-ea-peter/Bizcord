@@ -12,6 +12,7 @@ services:
       - "127.0.0.1:8200:8200"
     volumes:
       - ./vault/config.hcl:/vault/config/config.hcl:ro,z
+      - ./vault/policies:/vault/policies:ro,z
       - vault-data:/vault/file
     command: server
     environment:
@@ -53,10 +54,13 @@ services:
       context: ./apps/api-gateway/
       dockerfile: Dockerfile
     environment:
-      Vault__Token:  # ${VAULT_TOKEN}
+      # Soft fail: without .env the rest of the stack still starts; only the gateway stops with "token is required".
+      Vault__Token: ${VAULT_TOKEN:-}
       Vault__Address: http://vault:8200
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
+    depends_on:
+      - vault
     ports:
       - "8080:8080"
  
