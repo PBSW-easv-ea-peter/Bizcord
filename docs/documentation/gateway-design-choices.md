@@ -113,6 +113,37 @@ Tokens come from the gateway's local faucet (`POST /faucet`). The faucet and sig
 
 Ocelot aggregates have no authentication options of their own. Protection is enforced through the routes they combine. We tested it halfway through the rollout, while only `chat` was protected: without a token the whole aggregate returned 401, not a partial response. Today every route in the aggregate is protected, so this does not depend on Ocelot's behaviour for mixed cases.
 
+## Quality of service (week 44, risk 5)
+
+**Problem:** A slow ChatService kept requests open in the gateway, and the overview aggregate was as slow as its slowest call (risk 5 in [risk-analysis.md](../risk-analysis.md)).
+
+**Decision:** Every downstream call on an opted-in route runs through a Polly pipeline: a **circuit breaker around a timeout**.
+
+| Setting (`DownstreamQoS` in `appsettings.json`) | Value | Why |
+|---|---|---|
+| `Timeout` | 2 s | Far above a normal answer, below a client's patience |
+| `FailureRatio` / `MinimumThroughput` | 50 % of at least 3 calls | Two unlucky calls must not open the circuit |
+| `SamplingDuration` | 10 s | Window the failure ratio is measured over |
+| `BreakDuration` | 5 s | Gives the service room to recover, then one trial call (half-open) |
+
+- **The circuit only opens on "the service is sick":** timeouts, connection errors, 502, 503 and 504. A 500 from a bug in one endpoint or a 4xx is an answer from a working service.
+- **One circuit per downstream service** (host:port), so a slow ChatService does not stop calls to RTC.
+- **Answers from the gateway:** 504 when the timeout hits, and 503 with `Retry-After` while the circuit is open – then ChatService is not called at all.
+- **Routes opt in** with `"DelegatingHandlers": ["DownstreamQoSHandler"]`: all chat routes and `POST /rtc/messages`. The SignalR hub route does not, because long-polling requests are meant to stay open longer than the timeout.
+
+**Why not Ocelot's `QoSOptions`?** They need `Ocelot.Provider.Polly`, which has no stable release for Ocelot 25 (only betas built against an Ocelot beta). A `DelegatingHandler` is Ocelot's own extension point and gives the same behaviour with Polly.Core, which ChatService already uses for its ChatDB breaker. Code: [`Resilience/`](../../apps/api-gateway/src/ApiGateway/Resilience/).
+
+**Interplay with ChatService's own breaker:** when ChatDB is down, ChatService answers 503 quickly. Three of those also open the gateway's circuit, so the gateway stops forwarding until ChatService has had time to recover.
+
+**Verified by** `apps/api-gateway/tests/ApiGateway.Tests` (`dotnet test`): pass-through, 504 on timeout, circuit opens and fails fast, a 500 does not open it, one service's circuit does not affect another, and it tries again after the break. Both the timeout and the breaker tests were seen failing with the strategy removed. Manual check against the stack:
+
+```bash
+docker compose pause chatservice
+time curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer $TOKEN" localhost:8080/chats/$CHAT_ID   # 504 after ~2 s
+# after 3 failures within 10 s: 503 at once, with Retry-After
+docker compose unpause chatservice   # after 5 s the next call goes through again
+```
+
 ## Known limitations
 
 - **Partial failures are hidden by the aggregate.** If one downstream call fails, the client still gets `200` with the error embedded, e.g. `{"chat": {...}, "messages": {"status": 500, ...}}` (Ocelot even uses the reason phrase "cannot return from aggregate.."). If a downstream response has an empty body, the result is invalid JSON: `{"chat":,"messages":}`. Clients must inspect each part.

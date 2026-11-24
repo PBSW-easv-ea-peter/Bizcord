@@ -1,5 +1,6 @@
 using System.Text;
 using Bizcord.ApiGateway.Application.Services;
+using Bizcord.ApiGateway.Resilience;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -56,7 +57,7 @@ public static class ServiceExtensions
 
         services.AddAuthorization();
 
-        services.AddOcelot(configuration);
+        services.AddOcelot(configuration).AddDownstreamQoS(configuration);
 
         return services;
     }
