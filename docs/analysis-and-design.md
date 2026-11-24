@@ -7,6 +7,8 @@ Bizcord is a Discord-like chat platform split into bounded contexts (map below).
 - **ChatService** (Chat context) – direct and group chats, messages and read receipts.
 - **Real-Time Communication (RTC)** – pushes new messages to users who are online.
 
+The repository also contains the pieces around them, each with its own design document: **FileService** (files and storage quota, a participant in the file-message saga – [saga-file-attachment.md](documentation/saga-file-attachment.md)), the **API gateway** ([gateway-design-choices.md](documentation/gateway-design-choices.md)) and a **web frontend** ([apps/web](../apps/web/README.md)).
+
 The other contexts (User, UserAuth, Channel, Engagement) are not implemented here; we only reference users by `userId`. "NotificationHub" on the map is RabbitMQ in the implementation. "Chat Context" on the map is ChatService in the code and the C4 model, in the folder `apps/chat-microservice`.
 
 C4 model (containers, and components for ChatService and RTC): [`workspace.dsl`](../C4%20diagram/docs/workspace.dsl)
@@ -118,7 +120,7 @@ Full contracts: [ChatService](../apps/chat-microservice/docs/contracts.md) · [R
 
 ## 6. Getting started
 
-**Run** (only Docker is required):
+**Run** (only Docker is required). The first time, set up Vault and `.env` as described in the [README](../README.md#kør-projektet) – the API gateway gets its signing key from Vault.
 
 ```bash
 docker compose up -d --build   # from the repo root
@@ -127,9 +129,14 @@ dotnet test Bizcord.slnx       # Postgres and RabbitMQ are started by Testcontai
 
 | What | Where |
 | --- | --- |
+| Web frontend | http://localhost:8084 |
+| API gateway (Swagger, token faucet) | http://localhost:8080/swagger |
 | ChatService API (Swagger) | http://localhost:8081/swagger |
-| RTC (SignalR hub) | http://localhost:8080/hubs/chat?userId={uuid} |
+| ChatService GraphQL (Nitro) | http://localhost:8081/graphql |
+| RTC (SignalR hub) | http://localhost:8082/hubs/chat?userId={uuid} |
+| FileService API (Swagger) | http://localhost:8083/swagger |
 | RabbitMQ management | http://localhost:15672 (guest/guest) |
+| Vault UI | http://localhost:8200 |
 | Manual requests | [`ChatService.http`](../apps/chat-microservice/src/ChatService/ChatService.http) |
 
 Don't run the compose files under `apps/` at the same time – they use the same ports.
