@@ -51,12 +51,15 @@ docker compose up -d --build
 
 | Komponent | Port |
 |-----------|------|
+| Web-frontend | 8084 |
+| API Gateway | 8080 |
 | ChatService | 8081 |
 | RTC | 8082 |
 | FileService | 8083 |
-| API Gateway | 8080 |
 | Vault UI | 8200 |
 | RabbitMQ UI | 15672 |
+
+Frontenden taler kun med API-gatewayen. Se [apps/web/README.md](apps/web/README.md).
 
 Logging (Fluentd-sidecar)
 
