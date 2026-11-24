@@ -223,26 +223,47 @@ The alternative, an **optimistic** design, would show the message at once with a
 - **Downloads have no access check**: anyone with the (unguessable) file id can download. FileService doesn't know who is in which chat.
 - **RTC pushes only the text** of `chat.message-sent`. Clients fetch the attachment via ChatService's REST API.
 - The **file bytes live in Postgres** (`bytea`), so deleting the file and the quota change are one transaction. Real large files belong in blob storage.
-- The API gateway has no routes for FileService or `/file-messages` yet (#27), so the saga is started directly on ChatService.
 - The user's tier (Standard/Premium) would come from UserService. Today it is seed data in FileDB.
 
 ## Try it
 
-```
-docker compose up -d --build
-```
+Start the stack as described in the [README](../../README.md#kør-projektet) (Vault must be set up). Everything goes through the API gateway on `:8080`; ChatService and FileService are not reachable from the host (week 45). The user is the token's `sub`, so each user needs their own token from the faucet.
 
 | User | Id | Quota |
 |---|---|---|
 | Alice | `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` | Premium, 1 GB |
 | Charlie | `cccccccc-cccc-cccc-cccc-cccccccccccc` | Standard, 19 of 20 MB used → any file over 1 MB is rejected |
 
-1. `POST http://localhost:8083/files` (multipart, field `file`, header `X-User-Id`) → `fileId`
-2. `POST http://localhost:8081/chats/{chatId}/file-messages` `{ "fileId": "…", "content": "optional" }` → 202 + `sagaId` (Alice ↔ Charlie is chat `22222222-2222-2222-2222-222222222222`)
-3. `GET http://localhost:8081/chats/{chatId}/file-messages/{sagaId}` → `Completed` (Alice) or `Failed` with the reason (Charlie)
-4. `GET http://localhost:8083/quota` → used/remaining
+Alice and Charlie share the chat `22222222-2222-2222-2222-222222222222`.
 
-To see the timeout: stop FileService (`docker compose stop fileservice`) between step 1 and 2, wait 2½ minutes, then start it again.
+```bash
+G=http://localhost:8080
+CHAT=22222222-2222-2222-2222-222222222222
+token() { curl -s -X POST $G/faucet -H "Content-Type: application/json" \
+  -d "{\"claims\":{\"sub\":\"$1\",\"role\":\"member\"}}" | sed -E 's/.*"value":"([^"]+)".*/\1/'; }
+ALICE="Authorization: Bearer $(token aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa)"
+CHARLIE="Authorization: Bearer $(token cccccccc-cccc-cccc-cccc-cccccccccccc)"
+
+# 1. Upload a file → 201 with "fileId"
+echo hello > small.txt
+curl -s -X POST $G/files -H "$ALICE" -F "file=@small.txt"
+
+# 2. Send it as a message → 202 with "sagaId" and a Location header on :8080
+curl -si -X POST $G/chats/$CHAT/file-messages -H "$ALICE" -H "Content-Type: application/json" \
+  -d '{"fileId":"<fileId>","content":"optional"}'
+
+# 3. Follow the saga → "status": "Completed" (then "messageId" is set)
+curl -s $G/chats/$CHAT/file-messages/<sagaId> -H "$ALICE"
+
+# 4. Used and remaining quota
+curl -s $G/quota -H "$ALICE"
+```
+
+**Failure path A (quota):** repeat steps 1–3 as Charlie with a file over 1 MB (`head -c 2000000 /dev/urandom > big.bin`). The upload itself succeeds, because the file is only temporary until the saga reserves quota. The saga ends with `"status": "Failed"` and a `reason` about the storage quota.
+
+**Timeout:** stop FileService (`docker compose stop fileservice`) between step 1 and 2, wait 2½ minutes, then start it again.
+
+Verified on a fresh clone on 2026-11-24: Alice → `Completed`, Charlie with 2 MB → `Failed`.
 
 ## Code
 
