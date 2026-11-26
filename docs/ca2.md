@@ -28,6 +28,7 @@ Only Docker needs to run. Testcontainers starts Postgres and RabbitMQ.
 |---|---|---|---|
 | 2026-11-24 | `5a61994` | `dotnet test Bizcord.slnx`, integration tests included | 216/216 passed |
 | 2026-11-24 | `5a61994` (PR #42) | Fresh clone, README steps, `docker compose up -d --build`, [`gateway-smoke-test.sh`](documentation/gateway-smoke-test.sh) and the saga [Try it](documentation/saga-file-attachment.md#try-it) | 46/46 checks passed; saga ends `Completed` (happy path) and `Failed` (quota) |
+| 2026-11-26 | `5a61994` with PRs #41, #43 and #44 merged | `dotnet test Bizcord.slnx`, integration tests included | 224/224 passed (8 new `RtcHubGuardTests`) |
 
 ## Tasks
 
@@ -37,7 +38,7 @@ Only Docker needs to run. Testcontainers starts Postgres and RabbitMQ.
 | 43 | Authentication and authorization | [gateway-design-choices.md → Authentication and authorization](documentation/gateway-design-choices.md#authentication-and-authorization-task-02) (choices 7–9) | Faucet and JWT in `apps/api-gateway`, `RouteClaimsRequirement` in the Ocelot files | Smoke test: no token → 401, wrong role → 403, member → 200 |
 | 44 | Identify failure points | [risk-analysis.md](risk-analysis.md): 9 failure modes scored L×S×D | – | – |
 | 44 | Reliability measures | [risk-analysis.md → Decisions](risk-analysis.md#decisions) and [gateway QoS](documentation/gateway-design-choices.md#quality-of-service-week-44-risk-5) | Publish timeout (`RabbitMqMessageClient`), ChatDB circuit breaker (`ChatDb.cs`), gateway QoS (`apps/api-gateway/src/ApiGateway/Resilience/`) | `PublishTimeoutTests`, `ChatDbOutageTests`, `DownstreamQoSHandlerTests`; manual steps in [How to test](risk-analysis.md#how-to-test) |
-| 45 | East/West security | [east-west-security.md](documentation/east-west-security.md) | `expose` instead of `ports` in `docker-compose.yml`; `JwtAuthentication.cs` in ChatService | `EastWestSecurityTests`; from the host, `:8081`–`:8083` are refused |
+| 45 | East/West security | [east-west-security.md](documentation/east-west-security.md) | `expose` instead of `ports` in `docker-compose.yml`; `JwtAuthentication.cs` in ChatService; `RtcHubGuard` in the gateway for the RTC hub WebSocket | `EastWestSecurityTests`, `RtcHubGuardTests`; from the host, `:8081`–`:8083` are refused |
 | 45 | HashiCorp Vault | [vault.md](documentation/vault.md) | `VaultSecretProvider` in the gateway and ChatService, `vault/policies/secrets-reader.hcl` | Test table in [vault.md](documentation/vault.md) |
 | 46 | Saga scenario | [saga-file-attachment.md](documentation/saga-file-attachment.md) (flow, failure paths, the hard question) | – | – |
 | 46 | Saga implementation | [saga-file-attachment.md → Why orchestration?](documentation/saga-file-attachment.md#why-orchestration) and [Why no saga framework](documentation/saga-file-attachment.md#why-no-saga-framework-rebus) | `FileMessageSagaOrchestrator` in ChatService, `QuotaSagaParticipant` in FileService | `FileMessageSagaOrchestratorTests`, `FileSagaWiringTests`, `QuotaSagaParticipantTests`; manual: [Try it](documentation/saga-file-attachment.md#try-it) |
@@ -56,7 +57,7 @@ Each service documents its REST API and events:
 
 Each design document has its own section. The most important across the tasks:
 
-- FileService and RTC rely on network isolation only. They do not validate the JWT themselves (week 45).
+- FileService and RTC rely on network isolation only. They do not validate the JWT themselves. For the RTC hub WebSocket the gateway checks the token and sets `userId` from `sub`, because Ocelot skips its own checks on WebSocket routes (week 45).
 - RabbitMQ traffic between services is not token-protected (week 45).
 - Database passwords are in plain text in `docker-compose.yml`. Only the JWT signing key is in Vault (week 45).
 - Alerts on the log lines that the reliability measures write are assumed, not configured (week 44).
