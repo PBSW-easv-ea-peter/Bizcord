@@ -40,12 +40,26 @@ public class RtcHubGuardTests
         Assert.Equal("conn1", query["id"].ToString());
     }
 
-    [Fact]
-    public async Task Hub_access_token_is_not_forwarded_to_RTC()
+    [Theory]
+    [InlineData("?UserId=" + UserB)]
+    [InlineData("?USERID=" + UserB)]
+    public async Task Hub_client_userId_in_other_casing_does_not_survive(string clientQuery)
     {
-        var (context, forwarded) = await Run("/rtc/hubs/chat", "?access_token=secret-token", User(UserA, "member"));
+        var (context, _) = await Run("/rtc/hubs/chat", clientQuery, User(UserA, "member"));
+
+        // RTC reads Request.Query["userId"].FirstOrDefault(), and that lookup ignores case.
+        Assert.Equal(UserA, context.Request.Query["userId"].FirstOrDefault());
+    }
+
+    [Theory]
+    [InlineData("?access_token=secret-token")]
+    [InlineData("?Access_Token=secret-token")]
+    public async Task Hub_access_token_is_not_forwarded_to_RTC(string clientQuery)
+    {
+        var (context, forwarded) = await Run("/rtc/hubs/chat", clientQuery, User(UserA, "member"));
 
         Assert.True(forwarded());
+        // ContainsKey ignores case, so this also catches Access_Token.
         Assert.False(context.Request.Query.ContainsKey("access_token"));
     }
 

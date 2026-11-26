@@ -34,8 +34,10 @@ public class RtcHubGuard(RequestDelegate next)
         }
 
         // RTC trusts ?userId=, so it must be the token's sub. The token itself is dropped so it does not end up in RTC's request logs.
+        // Keys are matched ignoring case, because RTC's Request.Query lookup does: ?UserId=B would otherwise survive and win.
         var query = new QueryBuilder(QueryHelpers.ParseQuery(context.Request.QueryString.Value)
-            .Where(p => p.Key is not (UserIdQueryKey or AccessTokenQueryKey)))
+            .Where(p => !string.Equals(p.Key, UserIdQueryKey, StringComparison.OrdinalIgnoreCase)
+                     && !string.Equals(p.Key, AccessTokenQueryKey, StringComparison.OrdinalIgnoreCase)))
         {
             { UserIdQueryKey, sub }
         };
