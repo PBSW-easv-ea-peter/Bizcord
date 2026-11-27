@@ -5,7 +5,7 @@ Subscribes to domain events published by other Bizcord microservices via RabbitM
 ## Responsibilities
 
 - Subscribes to domain events on RabbitMQ via [EasyNetQ](https://easynetq.com/).
-- Pushes new messages to connected clients via SignalR (`/hubs/chat?userId=…`) and tracks who is online (`PresenceTracker`).
+- Pushes new messages to connected clients via SignalR (`/hubs/chat?userId=…`; from outside via the gateway's `/rtc/hubs/chat` with a token, where the gateway sets `userId`) and tracks who is online (`PresenceTracker`).
 - Publishes `rtc.message-delivered` with the recipients the message was pushed to — ChatService uses it to set `deliveredAt` on receipts.
 - Exposes an `IMessageClient` abstraction (`Publish`/`Subscribe`) so the underlying broker can be swapped later (e.g. for Kafka) without changing the rest of the service. `IClientNotifier` does the same for push.
 
