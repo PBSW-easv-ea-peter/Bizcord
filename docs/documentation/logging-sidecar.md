@@ -38,7 +38,12 @@ The current setup does not move 1:1 to Kubernetes: a container in a pod cannot r
 
 ## Verify
 
+ChatService is only reachable through the API gateway on `:8080` (week 45), so the test chat is created there with a `member` token from the faucet.
+
 ```bash
 docker compose up -d --build
-curl -s -X POST localhost:8081/chats/group -H "X-User-Id: 11111111-1111-1111-1111-111111111111" -H "Content-Type: application/json" -d '{"title":"Sidecar test"}'
+TOKEN=$(curl -s -X POST localhost:8080/faucet -H "Content-Type: application/json" \
+  -d '{"claims":{"sub":"11111111-1111-1111-1111-111111111111","role":"member"}}' | sed -E 's/.*"value":"([^"]+)".*/\1/')
+curl -s -X POST localhost:8080/chats/group -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"title":"Sidecar test"}'
 docker compose logs --tail 5 fluentd   # expect a line with "Service":"ChatService" and "Message":"Group chat created."
+```
